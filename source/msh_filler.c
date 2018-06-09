@@ -6,7 +6,7 @@
 /*   By: obamzuro <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/05/19 13:52:42 by obamzuro          #+#    #+#             */
-/*   Updated: 2018/05/23 12:05:19 by obamzuro         ###   ########.fr       */
+/*   Updated: 2018/06/09 15:59:42 by obamzuro         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,6 +28,21 @@ void		fill_commands(t_comm_corr *commands)
 	commands[5].func = ft_echo;
 	commands[6].comm = "exit";
 	commands[6].func = ft_exit;
+}
+
+char		**init_operators(void)
+{
+	char **operators;
+
+	operators = (char **)malloc(sizeof(char *) * AM_OPERATORS);
+	operators[0] = ">";
+	operators[1] = ">&";
+	operators[2] = ">>";
+	operators[3] = "<";
+	operators[4] = "<&";
+	operators[5] = "<<";
+	operators[6] = "|";
+	return (operators);
 }
 
 char		**fill_env(void)

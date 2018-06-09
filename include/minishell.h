@@ -6,15 +6,17 @@
 /*   By: obamzuro <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/05/13 15:06:10 by obamzuro          #+#    #+#             */
-/*   Updated: 2018/05/23 19:07:43 by obamzuro         ###   ########.fr       */
+/*   Updated: 2018/06/09 15:54:50 by obamzuro         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #ifndef __MINISHELL_H
 # define __MINISHELL_H
 # define AM_COMMANDS 7
+# define AM_OPERATORS 7
 # include <unistd.h>
 # include <signal.h>
+# include <term.h>
 # include <sys/stat.h>
 # include <sys/types.h>
 # include "libft.h"
@@ -50,4 +52,8 @@ char					*get_env(char *key, char **env);
 void					int_handler(int sig);
 
 void					free_double_arr(char **args);
+
+void					term_associate(void);
+void					set_noncanon(void);
+char					**init_operators(void);
 #endif

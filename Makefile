@@ -6,11 +6,11 @@
 #    By: obamzuro <marvin@42.fr>                    +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2018/05/11 15:56:03 by obamzuro          #+#    #+#              #
-#    Updated: 2018/05/23 20:04:01 by obamzuro         ###   ########.fr        #
+#    Updated: 2018/06/09 19:37:10 by obamzuro         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
-NAME = minishell
+NAME = 21sh
 
 SRCNAME = main.c		\
 		  msh_cd.c\
@@ -25,8 +25,9 @@ SRCNAME = main.c		\
 		  msh_signal_handler.c\
 		  msh_unsetenv.c\
 		  msh_replace_env_variable.c\
+		  init_term.c\
 
-FLAGS = -Wall -Wextra -Werror
+FLAGS = -g -Wall -Wextra -Werror
 
 SRC = $(addprefix source/, $(SRCNAME))
 
@@ -41,7 +42,7 @@ all: $(NAME)
 $(NAME): $(OBJ)
 	make -C mylibft
 	make -C ftprintf
-	gcc $(FLAGS) -I $(HDRDIR) $(OBJ) -L mylibft -lft -L ftprintf -lftprintf -o $(NAME)
+	gcc $(FLAGS) -I $(HDRDIR) $(OBJ) -L mylibft -lft -L ftprintf -lftprintf -ltermcap -o $(NAME)
 
 %.o: %.c $(HDR)
 	gcc $(FLAGS) -I $(HDRDIR) -c $< -o $@

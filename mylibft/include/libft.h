@@ -6,7 +6,7 @@
 /*   By: obamzuro <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/03/20 11:38:42 by obamzuro          #+#    #+#             */
-/*   Updated: 2018/05/23 12:29:32 by obamzuro         ###   ########.fr       */
+/*   Updated: 2018/06/09 19:17:37 by obamzuro         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -34,6 +34,13 @@ typedef struct	s_gnl_list
 	int					last;
 	struct s_gnl_list	*next;
 }				t_gnl_list;
+
+typedef struct	s_ftvector
+{
+	void	**elem;
+	int		capacity;
+	int		len;
+}				t_ftvector;
 
 void			*ft_memset(void *a, int b, size_t c);
 void			ft_bzero(void *s, size_t n);
@@ -115,4 +122,8 @@ size_t			ft_wcount2(const char *s, const char *c);
 char			*ft_eol(char *str);
 char			*ft_strjoin_char(const char *s1, const char *s2, char c);
 char			*ft_strjoin_path(const char *s1, const char *s2);
+
+void			init_ftvector(t_ftvector *vec);
+void			free_ftvector(t_ftvector *vec);
+void			push_ftvector(t_ftvector *vec, void *line);
 #endif

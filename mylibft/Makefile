@@ -6,7 +6,7 @@
 #    By: obamzuro <marvin@42.fr>                    +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2018/03/20 11:09:03 by obamzuro          #+#    #+#              #
-#    Updated: 2018/05/23 19:41:17 by obamzuro         ###   ########.fr        #
+#    Updated: 2018/06/09 19:37:19 by obamzuro         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -79,7 +79,8 @@ SRCNAME =   ft_memset.c				\
 			get_next_line.c			\
 			ft_nbr_size.c				\
 			ft_swap.c				\
-			ft_eol.c				
+			ft_eol.c				\
+			ft_vector.c
 
 SRC    = $(addprefix src/, $(SRCNAME))
 OBJECT = $(SRC:.c=.o)
@@ -93,7 +94,7 @@ $(NAME): $(OBJECT)
 	ranlib $(NAME)
 
 %.o: %.c
-	gcc -Wall -Wextra -Wall -o $@ -c $< -I $(HDIR)
+	gcc -g -Wall -Wextra -Wall -o $@ -c $< -I $(HDIR)
 
 clean:
 	rm -f $(OBJECT)
