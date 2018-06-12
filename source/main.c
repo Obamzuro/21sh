@@ -138,79 +138,123 @@ void				tilde_expansion(t_ftvector *line)
 	}
 }
 
-void				line_handling(char **operators)
+void				lexer_creating_mbmore(t_lexer *lexer)
 {
-	int			wasoperator;
-	char		buf[8];
-	char		*token;
-	char		*temp;
-	t_ftvector	line;
+//	int		i;
+//
+//	i = 0;
+//	while (i < lexer->tokens
+}
 
-	token = 0;
-	wasoperator = -1;
-	init_ftvector(&line);
+char				*read_until(t_lexer *lexer, char delim[8])
+{
+	char buf[8];
+	char *ret;
+	char *temp;
+
+	ret = 0;
 	while (1)
 	{
 		ft_bzero(buf, sizeof(buf));
 		read(0, buf, sizeof(buf));
-		if (wasoperator == 1)
+		if (!ft_strcmp(buf, delim))
+			break ;
+		temp = ret;
+		ret = ft_strjoin(ret, buf);
+		free(temp);
+		write(1, buf, sizeof(buf));
+	}
+	write(1, buf, sizeof(buf));
+	return (ret);
+}
+
+void				lexer_creating(char **operators)
+{
+	char		buf[8];
+	char		*temp;
+	t_token		*token;
+	t_lexer		lexer;
+
+	token = (t_token *)malloc(sizeof(t_token));
+	token->str = 0;
+	init_ftvector(&lexer.tokens);
+	while (1)
+	{
+		ft_bzero(buf, sizeof(buf));
+		read(0, buf, sizeof(buf));
+		if (token->type == OPERATOR)
 		{
-			if (append_operator(operators, buf, &token))
+			if (append_operator(operators, buf, &token->str))
 			{
 				write(1, buf, sizeof(buf));
 				continue ;
 			}
-			else if (token)
+			if (token->str)
 			{
-				push_ftvector(&line, token);
-				token = 0;
+				push_ftvector(&lexer.tokens, token);
+				token = (t_token *)malloc(sizeof(t_token));
+				token->str = 0;
 			}
 		}
 		if (identify_operator(operators, buf))
 		{
-			if (token)
-				push_ftvector(&line, token);
-			token = ft_strdup(buf);
-			wasoperator = 1;
+			if (token->str)
+			{
+				push_ftvector(&lexer.tokens, token);
+				token = (t_token *)malloc(sizeof(t_token));
+			}
+			token->str = ft_strdup(buf);
+			token->type = OPERATOR;
 			write(1, buf, sizeof(buf));
 			continue ;
 		}
+		else if (!ft_strcmp("\"", buf) || !ft_strcmp("\'", buf))
+		{
+			temp = ft_strjoin(token->str, 
+				read_until(&lexer, buf));
+			free(token->str);
+			token->str = temp;
+		}
 		else if (!ft_strcmp("\n", buf))
 		{
-			if (token)
+			if (token->str)
 			{
-				push_ftvector(&line, token);
-				token = 0;
+				push_ftvector(&lexer.tokens, token);
+				token = (t_token *)malloc(sizeof(t_token));
+				token->str = 0;
 			}
 			write(1, buf, sizeof(buf));
 			break ;
 		}
 		else if (!buf[1] && ft_strchr(" \t", buf[0]))
 		{
-			if (token)
+			if (token->str)
 			{
-				push_ftvector(&line, token);
-				token = 0;
+				push_ftvector(&lexer.tokens, token);
+				token = (t_token *)malloc(sizeof(t_token));
+				token->str = 0;
 			}
 		}
-		else if (!wasoperator)
+		else if (token->type != OPERATOR)
 		{
-			temp = ft_strjoin(token, buf);
-			free(token);
-			token = temp;
+			temp = ft_strjoin(token->str, buf);
+			free(token->str);
+			token->str = temp;
 		}
 		else
-			token = ft_strdup(buf);
-		wasoperator = 0;
+		{
+			token->str = ft_strdup(buf);
+			token->type = WORD;
+		}
 		write(1, buf, sizeof(buf));
 	}
-	push_ftvector(&line, 0);
-	tilde_expansion(&line);
+	lexer_creating_mbmore(&lexer);
+	//tilde_expansion(&lexer.tokens);
 	int i = 0;
 	ft_printf("\n");
-	while (line.elem[i])
+	while (i < lexer.tokens.len)
 	{
-		ft_printf("%s ", line.elem[i]);
+		ft_printf("%s ", ((t_token *)lexer.tokens.elem[i])->str);
 		++i;
 	}
 	ft_printf("\n");
@@ -236,7 +280,7 @@ int					main(void)
 	{
 		ft_printf("$> ");
 		g_sigint = 0;
-		line_handling(operators);
+		lexer_creating(operators);
 //		get_next_line(0, &line);
 //		g_sigint = 1;
 //		args = ft_strsplit(line, ';');

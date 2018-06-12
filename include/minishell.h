@@ -22,6 +22,33 @@
 # include "libft.h"
 # include "ft_printf.h"
 
+typedef enum			e_tokentype
+{
+	OPERATOR,
+	WORD,
+	IO_NUMBER,
+	NEWLINE
+}						t_tokentype;
+
+typedef struct			s_token
+{
+	t_tokentype		type;
+	char			*str;
+}						t_token;
+
+typedef struct			s_ast
+{
+	struct s_token		token;
+	struct s_ast		*left;
+	struct s_ast		*right;
+}						t_ast;
+
+typedef struct			s_lexer
+{
+	t_ftvector	tokens;
+//	t_token		*tokens;
+}						t_lexer;
+
 typedef struct			s_comm_corr
 {
 	char	*comm;

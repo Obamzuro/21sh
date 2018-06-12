@@ -27,7 +27,7 @@ SRCNAME = main.c		\
 		  msh_replace_env_variable.c\
 		  init_term.c\
 
-FLAGS = -g -Wall -Wextra -Werror
+FLAGS = -g 
 
 SRC = $(addprefix source/, $(SRCNAME))
 
