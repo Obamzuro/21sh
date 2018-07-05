@@ -6,13 +6,13 @@
 #    By: obamzuro <marvin@42.fr>                    +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2018/05/11 15:56:03 by obamzuro          #+#    #+#              #
-#    Updated: 2018/06/09 19:37:10 by obamzuro         ###   ########.fr        #
+#    Updated: 2018/07/05 14:51:46 by obamzuro         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
 NAME = 21sh
 
-SRCNAME = main.c		\
+SRCNAME = main2.c		\
 		  msh_cd.c\
 		  msh_echo.c\
 		  msh_exec.c\
@@ -35,7 +35,7 @@ OBJ = $(SRC:.c=.o)
 
 HDRDIR = include
 
-HDR = include/minishell.h
+HDR = include/21sh.h
 
 all: $(NAME)
 

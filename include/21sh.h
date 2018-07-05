@@ -1,17 +1,17 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   minishell.h                                        :+:      :+:    :+:   */
+/*   21sh.h                                             :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: obamzuro <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2018/05/13 15:06:10 by obamzuro          #+#    #+#             */
-/*   Updated: 2018/07/04 11:31:50 by obamzuro         ###   ########.fr       */
+/*   Created: 2018/07/04 11:35:30 by obamzuro          #+#    #+#             */
+/*   Updated: 2018/07/05 14:42:12 by obamzuro         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#ifndef __MINISHELL_H
-# define __MINISHELL_H
+#ifndef __21SH_H
+# define __21SH_H
 # define AM_COMMANDS 7
 # define AM_OPERATORS 7
 # include <unistd.h>
@@ -24,8 +24,10 @@
 
 typedef enum			e_tokentype
 {
-	OPERATOR,
 	WORD,
+	ASSIGNMENT_WORD,
+	NAME,
+	OPERATOR,
 	IO_NUMBER,
 	NEWLINE
 }						t_tokentype;
@@ -36,17 +38,16 @@ typedef struct			s_token
 	char			*str;
 }						t_token;
 
-typedef struct			s_ast
-{
-	struct s_token		token;
-	struct s_ast		*left;
-	struct s_ast		*right;
-}						t_ast;
+//typedef struct			s_ast
+//{
+//	struct s_token		token;
+//	struct s_ast		*left;
+//	struct s_ast		*right;
+//}						t_ast;
 
 typedef struct			s_lexer
 {
 	t_ftvector	tokens;
-//	t_token		*tokens;
 }						t_lexer;
 
 typedef struct			s_comm_corr
