@@ -6,7 +6,7 @@
 /*   By: obamzuro <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/07/04 11:35:30 by obamzuro          #+#    #+#             */
-/*   Updated: 2018/07/05 14:42:12 by obamzuro         ###   ########.fr       */
+/*   Updated: 2018/07/05 15:32:28 by obamzuro         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,6 +24,7 @@
 
 typedef enum			e_tokentype
 {
+	UKNOWN,
 	WORD,
 	ASSIGNMENT_WORD,
 	NAME,

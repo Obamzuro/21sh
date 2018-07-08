@@ -6,29 +6,29 @@
 /*   By: obamzuro <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/05/19 13:52:42 by obamzuro          #+#    #+#             */
-/*   Updated: 2018/06/09 15:59:42 by obamzuro         ###   ########.fr       */
+/*   Updated: 2018/07/05 15:18:53 by obamzuro         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "minishell.h"
+#include "21sh.h"
 
-void		fill_commands(t_comm_corr *commands)
-{
-	commands[0].comm = "pwd";
-	commands[0].func = print_pwd;
-	commands[1].comm = "cd";
-	commands[1].func = change_dir;
-	commands[2].comm = "env";
-	commands[2].func = print_env;
-	commands[3].comm = "setenv";
-	commands[3].func = set_env_comm;
-	commands[4].comm = "unsetenv";
-	commands[4].func = unset_env;
-	commands[5].comm = "echo";
-	commands[5].func = ft_echo;
-	commands[6].comm = "exit";
-	commands[6].func = ft_exit;
-}
+//void		fill_commands(t_comm_corr *commands)
+//{
+//	commands[0].comm = "pwd";
+//	commands[0].func = print_pwd;
+//	commands[1].comm = "cd";
+//	commands[1].func = change_dir;
+//	commands[2].comm = "env";
+//	commands[2].func = print_env;
+//	commands[3].comm = "setenv";
+//	commands[3].func = set_env_comm;
+//	commands[4].comm = "unsetenv";
+//	commands[4].func = unset_env;
+//	commands[5].comm = "echo";
+//	commands[5].func = ft_echo;
+//	commands[6].comm = "exit";
+//	commands[6].func = ft_exit;
+//}
 
 char		**init_operators(void)
 {

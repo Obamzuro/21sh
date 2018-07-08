@@ -6,11 +6,11 @@
 /*   By: obamzuro <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/06/09 14:25:20 by obamzuro          #+#    #+#             */
-/*   Updated: 2018/06/09 15:29:36 by obamzuro         ###   ########.fr       */
+/*   Updated: 2018/07/05 15:17:10 by obamzuro         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include <minishell.h>
+#include <21sh.h>
 
 void	term_associate(void)
 {

@@ -6,7 +6,7 @@
 /*   By: obamzuro <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/07/04 11:34:53 by obamzuro          #+#    #+#             */
-/*   Updated: 2018/07/05 14:57:46 by obamzuro         ###   ########.fr       */
+/*   Updated: 2018/07/05 18:38:00 by obamzuro         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -30,10 +30,7 @@ int		operator_part(char buf, char **token)
 	int		tokenlen;
 
 	tokenlen = ft_strlen(*token);
-	joining = (char *)malloc(tokenlen + 2);
-	ft_memcpy(joining, token, tokenlen);
-	joining[tokenlen] = buf;
-	joining[tokenlen + 1] = 0;
+	joining = ft_chrjoin(*token, buf);
 	i = -1;
 	while (++i < sizeof(g_operators) / sizeof(g_operators[0]))
 	{
@@ -44,6 +41,7 @@ int		operator_part(char buf, char **token)
 			return (1);
 		}
 	}
+	free(joining);
 	return (0);
 }
 
@@ -60,8 +58,10 @@ int		operator_begin(char buf)
 	return (0);
 }
 
+void	line_reading(char **line);
+
 char	*handle_quotes(t_lexer *lexer, char quote,
-		char *line, int i)
+		char **line, int *i)
 {
 	char	buf;
 	char	*ret;
@@ -70,17 +70,22 @@ char	*handle_quotes(t_lexer *lexer, char quote,
 	ret = 0;
 	while (1)
 	{
-		++i;
-		buf = line[i];
+		++(*i);
+		buf = (*line)[*i];
 		if (buf == quote)
 			break ;
-		if (buf == '\n')
-			break ;
+		if (buf == '\0')
+		{
+			temp = ret;
+			ret = ft_chrjoin(ret, '\n');
+			free(temp);
+			free(*line);
+			line_reading(line);
+			*i = -1;
+			continue ;
+		}
 		temp = ret;
-		ret = (char *)malloc(ft_strlen(ret) + 2);
-		memcpy(ret, temp, ft_strlen(temp));
-		ret[ft_strlen(temp)] = buf;
-		ret[ft_strlen(temp) + 1] = 0;
+		ret = ft_chrjoin(ret, buf);
 		free(temp);
 	}
 	return (ret);
@@ -89,67 +94,76 @@ char	*handle_quotes(t_lexer *lexer, char quote,
 void	lexing(t_lexer *lexer, char **line)
 {
 	char		*temp;
+	char		*temp2;
 	t_token		*token;
 	char		buf;
 	int			i;
 
-	token = (t_token *)malloc(sizeof(t_token));
-	token->str = 0;
-	init_ftvector(&lexer.tokens);
+	if (!lexer || !*line)
+		return ;
+	token = 0;
+	init_ftvector(&lexer->tokens);
 	i = -1;
 	while (1)
 	{
 		++i;
-		buf = line[i];
-		if (token->type == OPERATOR)
+		buf = (*line)[i];
+		if (buf == '\0')
+		{
+			if (token)
+				push_ftvector(&lexer->tokens, token);
+			break ;
+		}
+		if (token && token->type == OPERATOR)
 		{
 			if (operator_part(buf, &token->str))
 				continue ;
-			push_ftvector(&lexer.tokens, token);
-			token = (t_token *)malloc(sizeof(t_token));
-			token->str = 0;
+			push_ftvector(&lexer->tokens, token);
+			token = 0;
 		}
 		if (operator_begin(buf))
 		{
-			if (token->str)
-			{
-				push_ftvector(&lexer.tokens, token);
-				token = (t_token *)malloc(sizeof(t_token));
-			}
+			if (token)
+				push_ftvector(&lexer->tokens, token);
+			token = (t_token *)malloc(sizeof(t_token));
 			token->str = (char *)malloc(2);
 			token->str[0] = buf;
 			token->str[1] = 0;
-			token->type = OPERATOR:
+			token->type = OPERATOR;
 			continue ;
 		}
-		else if (buf == ''' || buf == '"')
+		else if (buf == '\'' || buf == '\"')
 		{
-			temp = ft_strjoin(token->str, handle_quotes(&lexer, buf, line, i));
+			if (!token)
+			{
+				token = (t_token *)malloc(sizeof(t_token));
+				token->str = 0;
+				token->type = WORD;
+			}
+			temp2 = handle_quotes(lexer, buf, line, &i);
+			temp = ft_strjoin(token->str, temp2);
 			free(token->str);
-			token->str = temp
-		}
-		else if (buf == '\n')
-		{
-			push_ftvector(&lexer.tokens, token);
-			break ;
+			free(temp2);
+			token->str = temp;
 		}
 		else if (buf == ' ')
 		{
-			if (token->str)
+			if (token)
 			{
-				push_ftvector(&lexer.tokens, token);
+				push_ftvector(&lexer->tokens, token);
 				token = (t_token *)malloc(sizeof(t_token));
 				token->str = 0;
 			}
 		}
-		else if (token->type != OPERATOR)
+		else if (token && token->type == WORD)
 		{
-			temp = ft_strjoin(token->str, buf);
+			temp = ft_chrjoin(token->str, buf);
 			free(token->str);
 			token->str = temp;
 		}
 		else
 		{
+			token = (t_token *)malloc(sizeof(t_token));
 			token->str = (char *)malloc(2);
 			token->str[0] = buf;
 			token->str[1] = 0;
@@ -166,14 +180,15 @@ void	line_reading(char **line)
 	*line = 0;
 	while (1)
 	{
+		ft_bzero(buf, sizeof(buf));
 		if (read(0, buf, sizeof(buf)) <= 0)
 			break ;
+		write(1, buf, sizeof(buf));
 		if (!ft_strcmp(buf, "\n"))
 			break ;
-		write(1, buf, sizeof(buf));
-		temp = ft_strjoin(line, buf);
-		free(line);
-		line = temp;
+		temp = ft_strjoin(*line, buf);
+		free(*line);
+		*line = temp;
 	}
 }
 
@@ -181,13 +196,30 @@ void	print_lexer_tokens(const t_lexer *lexer)
 {
 	int		i;
 
+	if (!lexer)
+		return ;
 	i = 0;
 	while (i < lexer->tokens.len)
 	{
-		ft_printf("tokenType = %d, token = %s\n", ((t_token *)lexer->tokens[i])->type,
-				((t_token *)lexer->tokens[i])->str,);
+		ft_printf("tokenType = %d, token = %s\n", ((t_token *)lexer->tokens.elem[i])->type,
+				((t_token *)lexer->tokens.elem[i])->str);
 		++i;
 	}
+}
+
+void	free_lexer(t_lexer *lexer)
+{
+	int		i;
+
+	i = 0;
+	while (i < lexer->tokens.len)
+	{
+		free(((t_token *)lexer->tokens.elem[i])->str);
+		free(lexer->tokens.elem[i]);
+		++i;
+	}
+	free(lexer->tokens.elem);
+	system("leaks 21sh");
 }
 
 int		main(void)
@@ -204,7 +236,9 @@ int		main(void)
 		ft_printf("$> ");
 		line_reading(&line);
 		lexing(&lexer, &line);
-		print_lexer_token(&lexer);
+		print_lexer_tokens(&lexer);
+		free(line);
+		free_lexer(&lexer);
 	}
 	free_double_arr(env);
 	return (0);
