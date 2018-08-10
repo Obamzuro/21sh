@@ -6,7 +6,7 @@
 /*   By: obamzuro <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/05/19 13:52:42 by obamzuro          #+#    #+#             */
-/*   Updated: 2018/07/05 15:18:53 by obamzuro         ###   ########.fr       */
+/*   Updated: 2018/08/10 15:46:48 by obamzuro         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -30,20 +30,10 @@
 //	commands[6].func = ft_exit;
 //}
 
-char		**init_operators(void)
+char *(operators[]) =
 {
-	char **operators;
-
-	operators = (char **)malloc(sizeof(char *) * AM_OPERATORS);
-	operators[0] = ">";
-	operators[1] = ">&";
-	operators[2] = ">>";
-	operators[3] = "<";
-	operators[4] = "<&";
-	operators[5] = "<<";
-	operators[6] = "|";
-	return (operators);
-}
+	">", ">&", ">>", "<", "<&", "<<", "|"
+};
 
 char		**fill_env(void)
 {
