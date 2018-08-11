@@ -6,14 +6,14 @@
 /*   By: obamzuro <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/07/04 11:35:30 by obamzuro          #+#    #+#             */
-/*   Updated: 2018/08/11 16:17:13 by obamzuro         ###   ########.fr       */
+/*   Updated: 2018/08/11 21:03:36 by obamzuro         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #ifndef __21SH_H
 # define __21SH_H
 # define AM_COMMANDS 7
-# define AM_OPERATORS 7
+# define AM_OPERATORS 8
 # define AM_SEPARATOROP 2
 # define AM_IOFILEOP 7
 # include <unistd.h>
@@ -33,7 +33,8 @@ typedef enum			e_tokentype
 	OPERATOR,
 	IO_NUMBER,
 	NEWLINE,
-	COMMAND
+	COMMAND,
+	USEDREDIRECTION
 }						t_tokentype;
 
 typedef struct			s_token
@@ -44,7 +45,7 @@ typedef struct			s_token
 
 typedef struct			s_ast
 {
-	char				*name;
+	char				*content;
 	t_tokentype			type;
 	struct s_ast		*left;
 	struct s_ast		*right;

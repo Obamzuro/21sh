@@ -6,7 +6,7 @@
 /*   By: obamzuro <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/05/13 15:05:22 by obamzuro          #+#    #+#             */
-/*   Updated: 2018/08/11 16:35:14 by obamzuro         ###   ########.fr       */
+/*   Updated: 2018/08/11 21:03:30 by obamzuro         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -279,7 +279,7 @@ void				lexer_creating(char *command, t_lexer *lexer)
 		++i;
 	}
 	ft_printf("\n");
-	system("leaks -quiet 21sh");
+//	system("leaks -quiet 21sh");
 	free(command);
 }
 
@@ -305,65 +305,116 @@ char				*(separator_op[AM_SEPARATOROP]) =
 char				*(io_file_op[AM_IOFILEOP]) =
 {
 	"<", "<&", ">", ">&", ">>", "<>", ">|"
-}
+};
 
-int					token_pos(t_lexer *lexer, int pos, char **findname, int names)
+int					last_token_pos(t_lexer *lexer, int beg, int end, char **findname, int names, t_tokentype tokentype)
 {
 	int		i;
 	int		j;
+	int		lasttokenpos;
 
-	i = pos;
-	while (i < lexer->tokens.len)
+	lasttokenpos = -1;
+	i = beg - 1;
+	while (++i <= end)
 	{
-		j = 0;
-		while (j < names)
-			if (ft_strequ(((t_token *)lexer->tokens.elem[i])->str, findname[j]))
-				return ((t_token *)lexer->tokens.elem[i]);
+		j = -1;
+		while (++j < names)
+			if (ft_strequ(((t_token *)lexer->tokens.elem[i])->str, findname[j]) &&
+					((t_token *)lexer->tokens.elem[i])->type == tokentype)
+				lasttokenpos = i;
 	}
-	return (-1);
+	return (lasttokenpos);
 }
 
-t_ast				*create_redirection_ast(t_lexer *lexer, int pos)
+t_ast				*create_command(t_lexer *lexer, int beg, int end)
+{
+	t_ast	*ast;
+	char	*str;
+	char	*temp;
+
+	ast = (t_ast *)ft_memalloc(sizeof(t_ast));
+	str = 0;
+	while (beg <= end)
+	{
+		if (((t_token *)lexer->tokens.elem[beg])->type == WORD)
+		{
+			temp = ft_strjoin_char(str, ((t_token *)lexer->tokens.elem[beg])->str, ' ');
+			free(str);
+			str = temp;
+		}
+		++beg;
+	}
+	ast->content = str;
+	return (ast);
+}
+
+t_ast				*create_redirection_ast(t_lexer *lexer, int beg, int end)
 {
 	t_ast		*ast;
 	int			i;
 	char		*str;
+	int			pos;
 
-	ast = (t_ast *)malloc(sizeof(t_ast));
-	if ((pos = token_pos(lexer, pos, io_file_op, AM_IOFILEOP)) == -1)
+	ast = (t_ast *)ft_memalloc(sizeof(t_ast));
+	if ((pos = last_token_pos(lexer, beg, end, io_file_op, AM_IOFILEOP, OPERATOR)) == -1)
+		return (create_command(lexer, beg, end));
+	ast->content = ((t_token *)lexer->tokens.elem[pos])->str;
+	ast->type = USEDREDIRECTION;
+	((t_token *)lexer->tokens.elem[pos])->type = USEDREDIRECTION;
+	// check ast->right correct input
+	if (lexer->tokens.len <= pos + 1 || pos + 1 > end)
 	{
-//		TODO:
-//		ast->name = ;
-	}
-	ast->name = ((t_token *)lexer->tokens.elem[pos])->str;
-	ast->type = OPERATOR;
-	ast->name = ((t_token *)lexer->tokens.elem[pos])->str;
-	ast->left = (t_ast *)ft_memalloc(sizeof(t_ast));
-	if (lexer->tokens.len < pos + 1)
-	{
-		ft_fprintf(2, "21sh: parse error near '\\n'");
+		ft_fprintf(2, "21sh: parse error - redirection word\n");
 		return (0);
 	}
-	ast->left->name = ((t_token *)lexer->tokens.elem[pos + 1])->str;
-	ast->left->type = WORD;
-	ast->right = create_redirection_ast(lexer, pos);
+	ast->right = (t_ast *)ft_memalloc(sizeof(t_ast));
+	ast->right->content = ((t_token *)lexer->tokens.elem[pos + 1])->str;
+	ast->right->type = USEDREDIRECTION;
+	((t_token *)lexer->tokens.elem[pos + 1])->type = USEDREDIRECTION;
+	if (!ast->left && !(ast->left = create_redirection_ast(lexer, beg, end)))
+		return (0);
 	return (ast);
 }
 
-t_ast				*create_separator_ast(t_lexer *lexer, int pos)
+t_ast				*create_separator_ast(t_lexer *lexer, int beg, int end)
 {
 	int		pos;
 	t_ast	*ast;
 
-	ast = (t_ast *)malloc(sizeof(t_ast));
-	pos = token_pos(lexer, pos, separator_op, AM_SEPARATOROP);
-	ast->name = ((t_token *)lexer->tokens.elem[pos])->str;
-	ast->type = OPERATOR;
-	if (!(ast->left = create_redirection_ast(lexer, pos)))
+	ast = (t_ast *)ft_memalloc(sizeof(t_ast));
+	if ((pos = last_token_pos(lexer, beg, end, separator_op, AM_SEPARATOROP, OPERATOR)) == -1)
+		return (create_redirection_ast(lexer, beg, end));
+	if (lexer->tokens.len <= pos + 1 || !pos)
+	{
+		ft_fprintf(2, "21sh: parse error - pipe incorrect position\n");
 		return (0);
-	if (!(ast->right = create_separator_ast(lexer, pos)))
+	}
+	ast->content = ((t_token *)lexer->tokens.elem[pos])->str;
+	ast->type = OPERATOR;
+	if (!(ast->left = create_separator_ast(lexer, beg, pos - 1)))
+		return (0);
+	if (!(ast->right = create_redirection_ast(lexer, pos + 1, end)))
 		return (0);
 	return (ast);
+}
+
+void				print_ast(t_ast *ast)
+{
+	int		i;
+
+	i = 0;
+	while (1)
+	{
+		if (!ast)
+			break ;
+		ft_printf("AST #%d - %s %d\n", i, ast->content, ast->type);
+		if (ast->right)
+			ft_printf("AST #%d right - %s %d\n", i, ast->right->content, ast->right->type);
+		else
+			ft_printf("AST #%d right - NULL\n", i);
+		ast = ast->left;
+		++i;
+	}
 }
 
 int					main(void)
@@ -391,7 +442,14 @@ int					main(void)
 		g_sigint = 0;
 		command = input_command();
 		lexer_creating(command, &lexer);
-		ast = create_separator_ast(&lexer, 0);
+		if (!lexer.tokens.len)
+		{
+			ft_fprintf(2, "21sh: lexing error\n");
+			free_lexer(&lexer);
+			continue ;
+		}
+		ast = create_separator_ast(&lexer, 0, lexer.tokens.len - 1);
+		print_ast(ast);
 		free_lexer(&lexer);
 //		get_next_line(0, &line);
 //		g_sigint = 1;
