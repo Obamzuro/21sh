@@ -6,7 +6,7 @@
 /*   By: obamzuro <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/07/04 11:35:30 by obamzuro          #+#    #+#             */
-/*   Updated: 2018/08/10 15:37:44 by obamzuro         ###   ########.fr       */
+/*   Updated: 2018/08/11 16:17:13 by obamzuro         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,6 +14,8 @@
 # define __21SH_H
 # define AM_COMMANDS 7
 # define AM_OPERATORS 7
+# define AM_SEPARATOROP 2
+# define AM_IOFILEOP 7
 # include <unistd.h>
 # include <signal.h>
 # include <term.h>
@@ -30,7 +32,8 @@ typedef enum			e_tokentype
 	NAME,
 	OPERATOR,
 	IO_NUMBER,
-	NEWLINE
+	NEWLINE,
+	COMMAND
 }						t_tokentype;
 
 typedef struct			s_token
@@ -39,12 +42,13 @@ typedef struct			s_token
 	char			*str;
 }						t_token;
 
-//typedef struct			s_ast
-//{
-//	struct s_token		token;
-//	struct s_ast		*left;
-//	struct s_ast		*right;
-//}						t_ast;
+typedef struct			s_ast
+{
+	char				*name;
+	t_tokentype			type;
+	struct s_ast		*left;
+	struct s_ast		*right;
+}						t_ast;
 
 typedef struct			s_lexer
 {
