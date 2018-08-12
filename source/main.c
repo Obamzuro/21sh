@@ -6,7 +6,7 @@
 /*   By: obamzuro <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/05/13 15:05:22 by obamzuro          #+#    #+#             */
-/*   Updated: 2018/08/11 21:03:30 by obamzuro         ###   ########.fr       */
+/*   Updated: 2018/08/12 12:45:43 by obamzuro         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -279,7 +279,6 @@ void				lexer_creating(char *command, t_lexer *lexer)
 		++i;
 	}
 	ft_printf("\n");
-//	system("leaks -quiet 21sh");
 	free(command);
 }
 
@@ -297,9 +296,10 @@ void				free_lexer(t_lexer *lexer)
 	free(lexer->tokens.elem);
 }
 
-char				*(separator_op[AM_SEPARATOROP]) =
+char				*(separator_op[AM_LEVELS][AM_SEPARATOROP]) =
 {
-	";", "&"
+	{ ";", "&" },
+	{ "|", "|" }
 };
 
 char				*(io_file_op[AM_IOFILEOP]) =
@@ -345,6 +345,7 @@ t_ast				*create_command(t_lexer *lexer, int beg, int end)
 		++beg;
 	}
 	ast->content = str;
+	ast->type = COMMAND;
 	return (ast);
 }
 
@@ -354,21 +355,32 @@ t_ast				*create_redirection_ast(t_lexer *lexer, int beg, int end)
 	int			i;
 	char		*str;
 	int			pos;
+	char		*temp;
 
-	ast = (t_ast *)ft_memalloc(sizeof(t_ast));
 	if ((pos = last_token_pos(lexer, beg, end, io_file_op, AM_IOFILEOP, OPERATOR)) == -1)
 		return (create_command(lexer, beg, end));
-	ast->content = ((t_token *)lexer->tokens.elem[pos])->str;
+	ast = (t_ast *)ft_memalloc(sizeof(t_ast));
+	ast->content = ft_strdup(((t_token *)lexer->tokens.elem[pos])->str);
 	ast->type = USEDREDIRECTION;
 	((t_token *)lexer->tokens.elem[pos])->type = USEDREDIRECTION;
+
+	// try to catch previous token
+	if (pos >= 1 && ft_isnumber(((t_token *)lexer->tokens.elem[pos - 1])->str))
+	{
+		temp = ft_strjoin(((t_token *)lexer->tokens.elem[pos - 1])->str, ast->content);
+		free(ast->content);
+		ast->content = temp;
+		((t_token *)lexer->tokens.elem[pos - 1])->type = USEDREDIRECTION;
+	}
+
 	// check ast->right correct input
 	if (lexer->tokens.len <= pos + 1 || pos + 1 > end)
 	{
-		ft_fprintf(2, "21sh: parse error - redirection word\n");
+		ft_fprintf(2, "21sh: parse error - redirection word missed\n");
 		return (0);
 	}
 	ast->right = (t_ast *)ft_memalloc(sizeof(t_ast));
-	ast->right->content = ((t_token *)lexer->tokens.elem[pos + 1])->str;
+	ast->right->content = ft_strdup(((t_token *)lexer->tokens.elem[pos + 1])->str);
 	ast->right->type = USEDREDIRECTION;
 	((t_token *)lexer->tokens.elem[pos + 1])->type = USEDREDIRECTION;
 	if (!ast->left && !(ast->left = create_redirection_ast(lexer, beg, end)))
@@ -376,22 +388,27 @@ t_ast				*create_redirection_ast(t_lexer *lexer, int beg, int end)
 	return (ast);
 }
 
-t_ast				*create_separator_ast(t_lexer *lexer, int beg, int end)
+t_ast				*create_separator_ast(t_lexer *lexer, int beg, int end, int level)
 {
 	int		pos;
 	t_ast	*ast;
 
+	if ((pos = last_token_pos(lexer, beg, end, separator_op[level], AM_SEPARATOROP, OPERATOR)) == -1)
+	{
+		if (level == AM_LEVELS - 1)
+			return (create_redirection_ast(lexer, beg, end));
+		else
+			return (create_separator_ast(lexer, beg, end, level + 1));
+	}
 	ast = (t_ast *)ft_memalloc(sizeof(t_ast));
-	if ((pos = last_token_pos(lexer, beg, end, separator_op, AM_SEPARATOROP, OPERATOR)) == -1)
-		return (create_redirection_ast(lexer, beg, end));
 	if (lexer->tokens.len <= pos + 1 || !pos)
 	{
 		ft_fprintf(2, "21sh: parse error - pipe incorrect position\n");
 		return (0);
 	}
-	ast->content = ((t_token *)lexer->tokens.elem[pos])->str;
+	ast->content = ft_strdup(((t_token *)lexer->tokens.elem[pos])->str);
 	ast->type = OPERATOR;
-	if (!(ast->left = create_separator_ast(lexer, beg, pos - 1)))
+	if (!(ast->left = create_separator_ast(lexer, beg, pos - 1, level)))
 		return (0);
 	if (!(ast->right = create_redirection_ast(lexer, pos + 1, end)))
 		return (0);
@@ -415,6 +432,16 @@ void				print_ast(t_ast *ast)
 		ast = ast->left;
 		++i;
 	}
+}
+
+void				free_ast(t_ast *ast)
+{
+	if (!ast)
+		return ;
+	free_ast(ast->left);
+	free_ast(ast->right);
+	free(ast->content);
+	free(ast);
 }
 
 int					main(void)
@@ -448,9 +475,11 @@ int					main(void)
 			free_lexer(&lexer);
 			continue ;
 		}
-		ast = create_separator_ast(&lexer, 0, lexer.tokens.len - 1);
+		ast = create_separator_ast(&lexer, 0, lexer.tokens.len - 1, 0);
 		print_ast(ast);
 		free_lexer(&lexer);
+		free_ast(ast);
+		system("leaks -quiet 21sh");
 //		get_next_line(0, &line);
 //		g_sigint = 1;
 //		args = ft_strsplit(line, ';');

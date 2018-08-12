@@ -6,7 +6,7 @@
 /*   By: obamzuro <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/07/04 11:35:30 by obamzuro          #+#    #+#             */
-/*   Updated: 2018/08/11 21:03:36 by obamzuro         ###   ########.fr       */
+/*   Updated: 2018/08/12 12:33:01 by obamzuro         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,6 +14,7 @@
 # define __21SH_H
 # define AM_COMMANDS 7
 # define AM_OPERATORS 8
+# define AM_LEVELS 2
 # define AM_SEPARATOROP 2
 # define AM_IOFILEOP 7
 # include <unistd.h>
