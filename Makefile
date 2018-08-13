@@ -6,7 +6,7 @@
 #    By: obamzuro <marvin@42.fr>                    +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2018/05/11 15:56:03 by obamzuro          #+#    #+#              #
-#    Updated: 2018/08/10 15:43:31 by obamzuro         ###   ########.fr        #
+#    Updated: 2018/08/13 16:35:15 by obamzuro         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -15,6 +15,7 @@ NAME = 21sh
 SRCNAME = main.c		\
 		  init_term.c\
 		  msh_filler.c\
+		  msh_exec.c
 #		  msh_cd.c\
 #		  msh_echo.c\
 #		  msh_exec.c\

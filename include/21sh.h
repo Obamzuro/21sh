@@ -6,7 +6,7 @@
 /*   By: obamzuro <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/07/04 11:35:30 by obamzuro          #+#    #+#             */
-/*   Updated: 2018/08/12 12:33:01 by obamzuro         ###   ########.fr       */
+/*   Updated: 2018/08/13 16:05:48 by obamzuro         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -35,7 +35,8 @@ typedef enum			e_tokentype
 	IO_NUMBER,
 	NEWLINE,
 	COMMAND,
-	USEDREDIRECTION
+	REDIRECTION,
+	USED
 }						t_tokentype;
 
 typedef struct			s_token
@@ -44,9 +45,15 @@ typedef struct			s_token
 	char			*str;
 }						t_token;
 
+typedef struct			s_binary_token
+{
+	char	*left;
+	char	*right;
+}						t_binary_token;
+
 typedef struct			s_ast
 {
-	char				*content;
+	void				*content;
 	t_tokentype			type;
 	struct s_ast		*left;
 	struct s_ast		*right;

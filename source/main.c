@@ -6,7 +6,7 @@
 /*   By: obamzuro <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/05/13 15:05:22 by obamzuro          #+#    #+#             */
-/*   Updated: 2018/08/12 12:45:43 by obamzuro         ###   ########.fr       */
+/*   Updated: 2018/08/13 16:35:54 by obamzuro         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -344,7 +344,7 @@ t_ast				*create_command(t_lexer *lexer, int beg, int end)
 		}
 		++beg;
 	}
-	ast->content = str;
+	ast->content = (void *)str;
 	ast->type = COMMAND;
 	return (ast);
 }
@@ -360,17 +360,19 @@ t_ast				*create_redirection_ast(t_lexer *lexer, int beg, int end)
 	if ((pos = last_token_pos(lexer, beg, end, io_file_op, AM_IOFILEOP, OPERATOR)) == -1)
 		return (create_command(lexer, beg, end));
 	ast = (t_ast *)ft_memalloc(sizeof(t_ast));
-	ast->content = ft_strdup(((t_token *)lexer->tokens.elem[pos])->str);
-	ast->type = USEDREDIRECTION;
-	((t_token *)lexer->tokens.elem[pos])->type = USEDREDIRECTION;
+	ast->content = (void *)ft_strdup(((t_token *)lexer->tokens.elem[pos])->str);
+	ast->type = REDIRECTION;
+	((t_token *)lexer->tokens.elem[pos])->type = USED;
+
+	// TODO: to free if parse error
+	ast->right = (t_ast *)ft_memalloc(sizeof(t_ast));
+	ast->right->content = (t_binary_token *)malloc(sizeof(t_binary_token));
 
 	// try to catch previous token
 	if (pos >= 1 && ft_isnumber(((t_token *)lexer->tokens.elem[pos - 1])->str))
 	{
-		temp = ft_strjoin(((t_token *)lexer->tokens.elem[pos - 1])->str, ast->content);
-		free(ast->content);
-		ast->content = temp;
-		((t_token *)lexer->tokens.elem[pos - 1])->type = USEDREDIRECTION;
+		((t_binary_token *)ast->right->content)->left = ((t_token *)lexer->tokens.elem[pos - 1])->str;
+		((t_token *)lexer->tokens.elem[pos - 1])->type = USED;
 	}
 
 	// check ast->right correct input
@@ -379,10 +381,9 @@ t_ast				*create_redirection_ast(t_lexer *lexer, int beg, int end)
 		ft_fprintf(2, "21sh: parse error - redirection word missed\n");
 		return (0);
 	}
-	ast->right = (t_ast *)ft_memalloc(sizeof(t_ast));
-	ast->right->content = ft_strdup(((t_token *)lexer->tokens.elem[pos + 1])->str);
-	ast->right->type = USEDREDIRECTION;
-	((t_token *)lexer->tokens.elem[pos + 1])->type = USEDREDIRECTION;
+	((t_binary_token *)ast->right->content)->right = ((t_token *)lexer->tokens.elem[pos + 1])->str;
+	ast->right->type = USED;
+	((t_token *)lexer->tokens.elem[pos + 1])->type = USED;
 	if (!ast->left && !(ast->left = create_redirection_ast(lexer, beg, end)))
 		return (0);
 	return (ast);
@@ -406,7 +407,7 @@ t_ast				*create_separator_ast(t_lexer *lexer, int beg, int end, int level)
 		ft_fprintf(2, "21sh: parse error - pipe incorrect position\n");
 		return (0);
 	}
-	ast->content = ft_strdup(((t_token *)lexer->tokens.elem[pos])->str);
+	ast->content = (void *)ft_strdup(((t_token *)lexer->tokens.elem[pos])->str);
 	ast->type = OPERATOR;
 	if (!(ast->left = create_separator_ast(lexer, beg, pos - 1, level)))
 		return (0);
@@ -426,12 +427,41 @@ void				print_ast(t_ast *ast)
 			break ;
 		ft_printf("AST #%d - %s %d\n", i, ast->content, ast->type);
 		if (ast->right)
-			ft_printf("AST #%d right - %s %d\n", i, ast->right->content, ast->right->type);
+		{
+			if (ast->type == REDIRECTION)
+				ft_printf("AST #%d - |%s  %s| %d\n", i, ((t_binary_token *)ast->right->content)->left, ((t_binary_token *)ast->right->content)->right, ast->right->type);
+			else
+				ft_printf("AST #%d - %s %d\n", i, ast->right->content, ast->right->type);
+		}
 		else
 			ft_printf("AST #%d right - NULL\n", i);
 		ast = ast->left;
 		++i;
 	}
+}
+
+void				parse_ast(t_ast *ast, char ***env)
+{
+	int			fd;
+	int			newfd;
+	static int	oldfd[3];
+
+	if (!ast)
+		return ;
+	if (ast->type == OPERATOR && ((char *)ast->content)[0] == ';' && !((char *)ast->content)[1])
+	{
+		parse_ast(ast->left, env);
+		parse_ast(ast->right, env);
+	}
+	if (ast->type == REDIRECTION)
+	{
+		fd = ft_atoi(((t_binary_token *)(ast->content))->left);
+		newfd = open(((t_binary_token *)(ast->content))->right, O_WRONLY);
+		dup2(newfd, fd);
+		parse_ast(ast->left, env);
+	}
+	if (ast->type == COMMAND)
+		ft_exec(ft_strsplit2(ast->content, " \t"), env);
 }
 
 void				free_ast(t_ast *ast)
@@ -477,6 +507,7 @@ int					main(void)
 		}
 		ast = create_separator_ast(&lexer, 0, lexer.tokens.len - 1, 0);
 		print_ast(ast);
+		parse_ast(ast, &env);
 		free_lexer(&lexer);
 		free_ast(ast);
 		system("leaks -quiet 21sh");

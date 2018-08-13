@@ -6,7 +6,7 @@
 /*   By: obamzuro <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/04/11 23:00:51 by obamzuro          #+#    #+#             */
-/*   Updated: 2018/05/09 11:35:06 by obamzuro         ###   ########.fr       */
+/*   Updated: 2018/08/12 18:37:31 by obamzuro         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -60,9 +60,9 @@ static void	stabilize_width(t_special *spec, intmax_t n, t_buffer *buff)
 
 	number.num = n;
 	calc_diffs(spec, &nsize, &diffs, &number);
-	if (g_flags[minus].exist || (g_flags[zero].exist &&
-				spec->precision == -1 && (g_flags[plus].exist ||
-			number.num < 0 || g_flags[space].exist)))
+	if (g_flags[minus].exist || (g_flags[zero].exist
+		&& spec->precision == -1 && (g_flags[plus].exist
+		|| number.num < 0 || g_flags[space].exist)))
 		print_sign(number.num, buff);
 	if (!g_flags[minus].exist && g_flags[zero].exist
 			&& spec->precision == -1)

@@ -6,11 +6,11 @@
 /*   By: obamzuro <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/05/19 13:52:33 by obamzuro          #+#    #+#             */
-/*   Updated: 2018/08/11 16:12:44 by obamzuro         ###   ########.fr       */
+/*   Updated: 2018/08/13 16:36:06 by obamzuro         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "minishell.h"
+#include "21sh.h"
 
 static char		*ft_exec_path_find_comm(char **args, char **paths)
 {
