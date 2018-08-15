@@ -6,7 +6,7 @@
 /*   By: obamzuro <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/05/13 15:05:22 by obamzuro          #+#    #+#             */
-/*   Updated: 2018/08/13 16:35:54 by obamzuro         ###   ########.fr       */
+/*   Updated: 2018/08/15 13:17:24 by obamzuro         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -445,6 +445,7 @@ void				parse_ast(t_ast *ast, char ***env)
 	int			fd;
 	int			newfd;
 	static int	oldfd[3];
+	char		**args;
 
 	if (!ast)
 		return ;
@@ -455,13 +456,17 @@ void				parse_ast(t_ast *ast, char ***env)
 	}
 	if (ast->type == REDIRECTION)
 	{
-		fd = ft_atoi(((t_binary_token *)(ast->content))->left);
-		newfd = open(((t_binary_token *)(ast->content))->right, O_WRONLY);
-		dup2(newfd, fd);
+		fd = ft_atoi(((t_binary_token *)(ast->right->content))->left);
+		newfd = open(((t_binary_token *)(ast->right->content))->right, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+		int a = dup2(newfd, fd);
 		parse_ast(ast->left, env);
 	}
 	if (ast->type == COMMAND)
-		ft_exec(ft_strsplit2(ast->content, " \t"), env);
+	{
+		args = ft_strsplit2(ast->content, " \t");
+		ft_exec(args, env);
+		free_double_arr(args);
+	}
 }
 
 void				free_ast(t_ast *ast)

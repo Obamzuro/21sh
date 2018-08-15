@@ -6,11 +6,11 @@
 /*   By: obamzuro <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/05/19 13:52:46 by obamzuro          #+#    #+#             */
-/*   Updated: 2018/05/21 18:12:49 by obamzuro         ###   ########.fr       */
+/*   Updated: 2018/08/15 12:59:50 by obamzuro         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "minishell.h"
+#include "21sh.h"
 
 void		free_double_arr(char **args)
 {

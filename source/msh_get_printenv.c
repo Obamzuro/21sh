@@ -6,11 +6,11 @@
 /*   By: obamzuro <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/05/19 13:52:51 by obamzuro          #+#    #+#             */
-/*   Updated: 2018/05/23 15:35:11 by obamzuro         ###   ########.fr       */
+/*   Updated: 2018/08/15 13:00:13 by obamzuro         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "minishell.h"
+#include "21sh.h"
 
 char		*get_env(char *key, char **env)
 {

@@ -6,7 +6,7 @@
 #    By: obamzuro <marvin@42.fr>                    +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2018/05/11 15:56:03 by obamzuro          #+#    #+#              #
-#    Updated: 2018/08/13 16:35:15 by obamzuro         ###   ########.fr        #
+#    Updated: 2018/08/15 13:00:15 by obamzuro         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -15,13 +15,12 @@ NAME = 21sh
 SRCNAME = main.c		\
 		  init_term.c\
 		  msh_filler.c\
-		  msh_exec.c
+		  msh_exec.c\
+		  msh_free.c\
+		  msh_get_printenv.c
 #		  msh_cd.c\
 #		  msh_echo.c\
-#		  msh_exec.c\
 #		  msh_exit.c\
-#		  msh_free.c\
-#		  msh_get_printenv.c\
 #		  msh_print_pwd.c\
 #		  msh_setenv.c\
 #		  msh_signal_handler.c\

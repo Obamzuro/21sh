@@ -6,11 +6,11 @@
 /*   By: obamzuro <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/05/19 13:53:02 by obamzuro          #+#    #+#             */
-/*   Updated: 2018/05/23 14:51:27 by obamzuro         ###   ########.fr       */
+/*   Updated: 2018/08/15 13:00:00 by obamzuro         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "minishell.h"
+#include "21sh.h"
 
 static int			set_env_check_existing(char *key, char *value, char **env)
 {
