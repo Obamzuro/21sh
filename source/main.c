@@ -6,7 +6,7 @@
 /*   By: obamzuro <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/05/13 15:05:22 by obamzuro          #+#    #+#             */
-/*   Updated: 2018/08/22 21:36:45 by obamzuro         ###   ########.fr       */
+/*   Updated: 2018/08/22 21:48:22 by obamzuro         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -463,7 +463,6 @@ int						parse_ast(t_ast *ast, char ***env, int ispipe)
 	else if (ast->type == OPERATOR && ((char *)ast->content)[0] == '|' && !((char *)ast->content)[1])
 	{
 		pipe(fdpipe);
-
 		if (!(pid[0] = fork()))
 		{
 			close(fdpipe[0]);
