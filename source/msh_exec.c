@@ -6,7 +6,7 @@
 /*   By: obamzuro <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/05/19 13:52:33 by obamzuro          #+#    #+#             */
-/*   Updated: 2018/08/15 13:00:59 by obamzuro         ###   ########.fr       */
+/*   Updated: 2018/08/22 21:00:31 by obamzuro         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -94,19 +94,19 @@ static int		ft_exec_fork(char **args, char ***env, char *comm)
 			exit(EXIT_FAILURE);
 		}
 	}
-	else if (process > 0)
-	{
-		wait(0);
-	}
-	else
+//	else if (process > 0)
+//	{
+//		wait(0);
+//	}
+	else if (process < 0)
 	{
 		ft_fprintf(2, "Can't create a child thread\n");
-		return (1);
+		return (0);
 	}
-	return (0);
+	return (process);
 }
 
-void			ft_exec(char **args, char ***env)
+int				ft_exec(char **args, char ***env)
 {
 	char		*comm;
 	char		*temp;
@@ -125,9 +125,10 @@ void			ft_exec(char **args, char ***env)
 		comm = args[0];
 	}
 	if (!ft_exec_check_err(args, comm))
-		return ;
+		return (0);
 	ret = ft_exec_fork(args, env, comm);
+	// TODO: can "free" make problems for child process?
 	if (comm != args[0])
 		free(comm);
-	return ;
+	return (ret);
 }

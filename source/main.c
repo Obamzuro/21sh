@@ -6,7 +6,7 @@
 /*   By: obamzuro <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/05/13 15:05:22 by obamzuro          #+#    #+#             */
-/*   Updated: 2018/08/15 13:17:24 by obamzuro         ###   ########.fr       */
+/*   Updated: 2018/08/22 21:36:45 by obamzuro         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -440,33 +440,89 @@ void				print_ast(t_ast *ast)
 	}
 }
 
-void				parse_ast(t_ast *ast, char ***env)
+int						parse_ast(t_ast *ast, char ***env, int ispipe)
 {
 	int			fd;
 	int			newfd;
-	static int	oldfd[3];
+	int			oldfd[2];
+	int			fdin;
+	int			fdout;
+	int			fdpipe[2];
 	char		**args;
+	int			process;
+	pid_t		pid[2];
 
 	if (!ast)
-		return ;
+		return (0);
 	if (ast->type == OPERATOR && ((char *)ast->content)[0] == ';' && !((char *)ast->content)[1])
 	{
-		parse_ast(ast->left, env);
-		parse_ast(ast->right, env);
+		parse_ast(ast->left, env, 0);
+		parse_ast(ast->right, env, 0);
+		return (process);
 	}
-	if (ast->type == REDIRECTION)
+	else if (ast->type == OPERATOR && ((char *)ast->content)[0] == '|' && !((char *)ast->content)[1])
+	{
+		pipe(fdpipe);
+
+		if (!(pid[0] = fork()))
+		{
+			close(fdpipe[0]);
+			dup2(fdpipe[1], 1);
+			close(fdpipe[1]);
+			parse_ast(ast->left, env, 1);
+			exit(0);
+		}
+		if (!(pid[1] = fork()))
+		{
+			close(fdpipe[1]);
+			dup2(fdpipe[0], 0);
+			close(fdpipe[0]);
+			parse_ast(ast->right, env, 1);
+			exit(0);
+		}
+		close(fdpipe[0]);
+		close(fdpipe[1]);
+		waitpid(pid[0], 0, 0);
+		waitpid(pid[1], 0, 0);
+//		oldfd[0] = dup(0);
+//		oldfd[1] = dup(1);
+//		pipe(fdpipe);
+//		dup2(fdpipe[1], 1);
+//		close(fdpipe[1]);
+//		parse_ast(ast->left, env, 1);
+//		dup2(fdpipe[0], 0);
+//		close(fdpipe[0]);
+//		dup2(oldfd[1], 1);
+//		close(oldfd[1]);
+//		process = parse_ast(ast->right, env, 1);
+//		if (!ispipe)
+//			waitpid(process, 0, 0);
+//		dup2(oldfd[0], 0);
+//		close(oldfd[0]);
+//		return (process);
+	}
+	else if (ast->type == REDIRECTION)
 	{
 		fd = ft_atoi(((t_binary_token *)(ast->right->content))->left);
+		oldfd[0] = dup(fd);
 		newfd = open(((t_binary_token *)(ast->right->content))->right, O_WRONLY | O_CREAT | O_TRUNC, 0644);
 		int a = dup2(newfd, fd);
-		parse_ast(ast->left, env);
+		close(newfd);
+		process = parse_ast(ast->left, env, ispipe);
+		a = dup2(oldfd[0], fd);
+		close(oldfd[0]);
+		return (process);
 	}
-	if (ast->type == COMMAND)
+	else if (ast->type == COMMAND)
 	{
 		args = ft_strsplit2(ast->content, " \t");
-		ft_exec(args, env);
+		process = ft_exec(args, env);
+//		if (!ispipe)
+			wait(0);
 		free_double_arr(args);
+		return (process);
 	}
+	return (0);
 }
 
 void				free_ast(t_ast *ast)
@@ -477,6 +533,11 @@ void				free_ast(t_ast *ast)
 	free_ast(ast->right);
 	free(ast->content);
 	free(ast);
+}
+
+void				zombie_handler(int sig)
+{
+//	printf("SIGCHLD!\n");
 }
 
 int					main(void)
@@ -492,6 +553,7 @@ int					main(void)
 
 	g_sigint = 0;
 	//signal(SIGINT, int_handler);
+	signal(SIGCHLD, zombie_handler);
 	//fill_commands(commands);
 	env = fill_env();
 	term_associate();
@@ -512,10 +574,10 @@ int					main(void)
 		}
 		ast = create_separator_ast(&lexer, 0, lexer.tokens.len - 1, 0);
 		print_ast(ast);
-		parse_ast(ast, &env);
+		parse_ast(ast, &env, 0);
 		free_lexer(&lexer);
 		free_ast(ast);
-		system("leaks -quiet 21sh");
+//		system("leaks -quiet 21sh");
 //		get_next_line(0, &line);
 //		g_sigint = 1;
 //		args = ft_strsplit(line, ';');

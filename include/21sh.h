@@ -6,7 +6,7 @@
 /*   By: obamzuro <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/07/04 11:35:30 by obamzuro          #+#    #+#             */
-/*   Updated: 2018/08/14 20:03:39 by obamzuro         ###   ########.fr       */
+/*   Updated: 2018/08/15 18:03:41 by obamzuro         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -82,7 +82,7 @@ void					replace_env_variable(char **args, char **env);
 
 void					change_dir(char **args, char ***env);
 void					ft_echo(char **args, char ***env);
-void					ft_exec(char **args, char ***env);
+int						ft_exec(char **args, char ***env);
 void					ft_exit(char **args, char ***env);
 void					print_env(char **args, char ***env);
 void					print_pwd(char **args, char ***env);
