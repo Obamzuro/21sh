@@ -6,7 +6,7 @@
 /*   By: obamzuro <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/07/04 11:35:30 by obamzuro          #+#    #+#             */
-/*   Updated: 2018/08/15 18:03:41 by obamzuro         ###   ########.fr       */
+/*   Updated: 2018/08/23 18:47:06 by obamzuro         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -38,6 +38,12 @@ typedef enum			e_tokentype
 	REDIRECTION,
 	USED
 }						t_tokentype;
+
+typedef struct			s_initfd
+{
+	int		fdin;
+	int		fdout;
+}						t_initfd;
 
 typedef struct			s_token
 {
@@ -82,7 +88,7 @@ void					replace_env_variable(char **args, char **env);
 
 void					change_dir(char **args, char ***env);
 void					ft_echo(char **args, char ***env);
-int						ft_exec(char **args, char ***env);
+int						ft_exec(char **args, char ***env, int forkneed);
 void					ft_exit(char **args, char ***env);
 void					print_env(char **args, char ***env);
 void					print_pwd(char **args, char ***env);
@@ -96,6 +102,6 @@ void					int_handler(int sig);
 void					free_double_arr(char **args);
 
 void					term_associate(void);
-void					set_noncanon(void);
+void					change_termios(t_initfd *initfd, int canon);
 char					**init_operators(void);
 #endif

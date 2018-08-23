@@ -6,7 +6,7 @@
 /*   By: obamzuro <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/05/19 13:52:33 by obamzuro          #+#    #+#             */
-/*   Updated: 2018/08/22 21:00:31 by obamzuro         ###   ########.fr       */
+/*   Updated: 2018/08/23 18:09:59 by obamzuro         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -106,7 +106,7 @@ static int		ft_exec_fork(char **args, char ***env, char *comm)
 	return (process);
 }
 
-int				ft_exec(char **args, char ***env)
+int				ft_exec(char **args, char ***env, int forkneed)
 {
 	char		*comm;
 	char		*temp;
@@ -126,7 +126,13 @@ int				ft_exec(char **args, char ***env)
 	}
 	if (!ft_exec_check_err(args, comm))
 		return (0);
-	ret = ft_exec_fork(args, env, comm);
+	if (forkneed)
+		ret = ft_exec_fork(args, env, comm);
+	else if ((ret = execve(comm, args, *env) == -1))
+	{
+		ft_fprintf(2, "minishell: File execution error: %s\n", comm);
+		exit(EXIT_FAILURE);
+	}
 	// TODO: can "free" make problems for child process?
 	if (comm != args[0])
 		free(comm);

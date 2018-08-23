@@ -6,7 +6,7 @@
 /*   By: obamzuro <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/06/09 14:25:20 by obamzuro          #+#    #+#             */
-/*   Updated: 2018/08/21 16:45:51 by obamzuro         ###   ########.fr       */
+/*   Updated: 2018/08/23 19:13:52 by obamzuro         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -36,18 +36,27 @@ void	term_associate(void)
 	}
 }
 
-void	set_noncanon(void)
+void	change_termios(t_initfd *initfd, int canon)
 {
 	struct termios		tty;
 
-	if (!isatty(0))
+	if (!canon)
 	{
-		ft_fprintf(2, "21sh: stdin isn't terminal\n");
-		exit(EXIT_FAILURE);
+		if (!isatty(initfd->fdin))
+		{
+			ft_fprintf(2, "21sh: stdin isn't terminal\n");
+			exit(EXIT_FAILURE);
+		}
+		tcgetattr(initfd->fdout, &tty);
+		tty.c_lflag &= ~(ICANON | ECHO);
+		tty.c_cc[VMIN] = 1;
+		tty.c_cc[VTIME] = 0;
+		tcsetattr(initfd->fdout, TCSANOW, &tty);
 	}
-	tcgetattr(1, &tty);
-	tty.c_lflag &= ~(ICANON | ECHO);
-	tty.c_cc[VMIN] = 1;
-	tty.c_cc[VTIME] = 0;
-	tcsetattr(1, TCSANOW, &tty);
+	else
+	{
+		tcgetattr(initfd->fdout, &tty);
+		tty.c_lflag |= (ICANON | ECHO);
+		tcsetattr(initfd->fdout, TCSANOW, &tty);
+	}
 }

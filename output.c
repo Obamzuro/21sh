@@ -6,7 +6,7 @@
 /*   By: obamzuro <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/08/21 13:19:59 by obamzuro          #+#    #+#             */
-/*   Updated: 2018/08/21 19:20:34 by obamzuro         ###   ########.fr       */
+/*   Updated: 2018/08/23 19:24:11 by obamzuro         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,7 +20,7 @@ int main(int argc, char **argv)
 	i = 0;
 	while (i < 10)
 	{
-		write(1, "woop", 4);
+		write(3, "woop", 4);
 		++i;
 	}
 //	while (1)
