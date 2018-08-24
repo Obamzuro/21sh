@@ -6,7 +6,7 @@
 /*   By: obamzuro <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/05/13 15:05:22 by obamzuro          #+#    #+#             */
-/*   Updated: 2018/08/23 22:19:20 by obamzuro         ###   ########.fr       */
+/*   Updated: 2018/08/24 16:28:30 by obamzuro         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -551,12 +551,23 @@ int						parse_ast(t_ast *ast, char ***env, int ispipe, t_initfd *initfd, int is
 				ft_fprintf(2, "sh: %s: No such file or directory\n", ((t_binary_token *)(ast->right->content))->right);
 				return (0);
 			}
-			oldfd[0] = dup(fd);
-			dup2(newfd, fd);
-			close(newfd);
-			process = parse_ast(ast->left, env, ispipe, initfd, 1);
-			dup2(oldfd[0], fd);
-			close(oldfd[0]);
+			if (((char *)ast->content)[1] != '&')
+			{
+				oldfd[0] = dup(fd);
+				dup2(newfd, fd);
+				close(newfd);
+				process = parse_ast(ast->left, env, ispipe, initfd, 1);
+				dup2(oldfd[0], fd);
+				close(oldfd[0]);
+			}
+			else
+			{
+				oldfd[0] = dup(fd);
+				dup2(newfd, fd);
+				process = parse_ast(ast->left, env, ispipe, initfd, 1);
+				dup2(oldfd[0], fd);
+				close(oldfd[0]);
+			}
 		}
 		wait(0);
 		return (process);
