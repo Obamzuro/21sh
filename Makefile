@@ -6,7 +6,7 @@
 #    By: obamzuro <marvin@42.fr>                    +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2018/05/11 15:56:03 by obamzuro          #+#    #+#              #
-#    Updated: 2018/08/23 17:48:47 by obamzuro         ###   ########.fr        #
+#    Updated: 2018/08/27 17:13:15 by obamzuro         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -17,15 +17,15 @@ SRCNAME = main.c		\
 		  msh_filler.c\
 		  msh_exec.c\
 		  msh_free.c\
-		  msh_get_printenv.c
-#		  msh_cd.c\
-#		  msh_echo.c\
-#		  msh_exit.c\
-#		  msh_print_pwd.c\
-#		  msh_setenv.c\
-#		  msh_signal_handler.c\
-#		  msh_unsetenv.c\
-#		  msh_replace_env_variable.c\
+		  msh_get_printenv.c\
+		  msh_cd.c\
+		  msh_echo.c\
+		  msh_exit.c\
+		  msh_print_pwd.c\
+		  msh_setenv.c\
+		  msh_signal_handler.c\
+		  msh_unsetenv.c\
+		  msh_replace_env_variable.c
 
 FLAGS = -g 
 

@@ -10,7 +10,7 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "21sh.h"
+#include "minishell.h"
 
 static void			unset_env_cpenv(char **args, char ***env, char **newenv)
 {

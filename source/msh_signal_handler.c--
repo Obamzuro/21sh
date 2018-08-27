@@ -1,20 +1,25 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   msh_exit.c                                         :+:      :+:    :+:   */
+/*   msh_signal_handler.c                               :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: obamzuro <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2018/05/19 13:52:38 by obamzuro          #+#    #+#             */
-/*   Updated: 2018/05/23 15:04:58 by obamzuro         ###   ########.fr       */
+/*   Created: 2018/05/19 13:53:06 by obamzuro          #+#    #+#             */
+/*   Updated: 2018/05/19 13:53:07 by obamzuro         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "21sh.h"
+#include "minishell.h"
 
-void		ft_exit(char **args, char ***env)
+void		int_handler(int sig)
 {
-	args++;
-	env++;
-	exit(0);
+	if (sig == SIGINT)
+	{
+		signal(SIGINT, int_handler);
+		if (g_sigint == 0)
+			write(1, "\n$> ", 4);
+		else
+			write(1, "\n", 1);
+	}
 }
