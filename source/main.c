@@ -6,7 +6,7 @@
 /*   By: obamzuro <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/05/13 15:05:22 by obamzuro          #+#    #+#             */
-/*   Updated: 2018/08/29 00:11:18 by obamzuro         ###   ########.fr       */
+/*   Updated: 2018/08/29 00:31:54 by obamzuro         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -90,10 +90,10 @@ int					lexing_try_append_operator(char buf, char **tokenstr)
 
 t_token				*lexing_divide_operator(t_lexer *lexer, t_token *token)
 {
-	if (lexer->tokens.len > 0)
+	if (lexer->tokens.len > 0 &&
+		((t_token *)lexer->tokens.elem[lexer->tokens.len - 1])->type == UKNOWN)
 	{
 		if (ft_isnumber(((t_token *)lexer->tokens.elem[lexer->tokens.len - 1])->str) &&
-				((t_token *)lexer->tokens.elem[lexer->tokens.len - 1])->type == UKNOWN &&
 				ft_is_str_in_args(token->str, 5, ">", ">&", ">>", "<", "<&"))
 			((t_token *)lexer->tokens.elem[lexer->tokens.len - 1])->type = IO_NUMBER;
 		else
@@ -174,7 +174,8 @@ t_token				*lexing_handling_separator(t_lexer *lexer, t_token *token)
 {
 	if (token && token->str)
 	{
-		token->type = WORD;
+		if (token->type == UKNOWN)
+			token->type = WORD;
 		push_ftvector(&lexer->tokens, token);
 	}
 	token = NULL;
@@ -459,24 +460,14 @@ t_ast				*create_separator_ast(t_lexer *lexer, int beg, int end, int level)
 	ast->content = (void *)ft_strdup(((t_token *)lexer->tokens.elem[pos])->str);
 	ast->type = OPERATOR;
 	if (!(ast->left = create_separator_ast(lexer, beg, pos - 1, level)))
-	{
-		free(ast->content);
-		free(ast);
 		return (0);
-	}
 	if (level != 1)
 	{
 		if (!(ast->right = create_separator_ast(lexer, pos + 1, end, level + 1)))
-		{
 			return (0);
-		}
 	}
 	else if (!(ast->right = create_redirection_ast(lexer, pos + 1, end)))
-	{
-		free(ast->content);
-		free(ast);
 		return (0);
-	}
 	return (ast);
 }
 
@@ -712,7 +703,7 @@ int					main(void)
 		parse_ast(ast, &env, 0, &initfd, 0);
 		free_lexer(&lexer);
 		free_ast(ast);
-//		system("leaks -quiet 21sh");
+		system("leaks -quiet 21sh");
 	}
 	free_double_arr(env);
 	return (0);
