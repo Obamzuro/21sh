@@ -6,7 +6,7 @@
 /*   By: obamzuro <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/07/04 11:35:30 by obamzuro          #+#    #+#             */
-/*   Updated: 2018/08/27 19:15:53 by obamzuro         ###   ########.fr       */
+/*   Updated: 2018/08/28 22:33:00 by obamzuro         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,7 +16,7 @@
 # define AM_OPERATORS 8
 # define AM_LEVELS 2
 # define AM_SEPARATOROP 2
-# define AM_IOFILEOP 7
+# define AM_IOFILEOP 6
 # include <unistd.h>
 # include <signal.h>
 # include <term.h>
@@ -29,11 +29,9 @@ typedef enum			e_tokentype
 {
 	UKNOWN = 0,
 	WORD,
-	ASSIGNMENT_WORD,
 	NAME,
 	OPERATOR,
 	IO_NUMBER,
-	NEWLINE,
 	COMMAND,
 	REDIRECTION,
 	USED
@@ -44,6 +42,12 @@ typedef struct			s_initfd
 	int		fdin;
 	int		fdout;
 }						t_initfd;
+
+typedef struct			s_border
+{
+	int		beg;
+	int		end;
+}						t_border;
 
 typedef struct			s_token
 {

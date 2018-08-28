@@ -6,7 +6,7 @@
 /*   By: obamzuro <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/05/13 15:05:22 by obamzuro          #+#    #+#             */
-/*   Updated: 2018/08/27 19:19:03 by obamzuro         ###   ########.fr       */
+/*   Updated: 2018/08/29 00:11:18 by obamzuro         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -63,21 +63,7 @@ char				*input_command(void)
 	return (command);
 }
 
-int					identify_operator(char buf)
-{
-	int			i;
-	extern char	*operators[AM_OPERATORS];
-
-	i = -1;
-	if (!buf)
-		return (0);
-	while (++i < AM_OPERATORS)
-		if (buf == operators[i][0])
-			return (1);
-	return (0);
-}
-
-int					try_append_operator(char buf, char **tokenstr)
+int					lexing_try_append_operator(char buf, char **tokenstr)
 {
 	int			i;
 	char		*joining;
@@ -100,6 +86,131 @@ int					try_append_operator(char buf, char **tokenstr)
 	}
 	free(joining);
 	return (0);
+}
+
+t_token				*lexing_divide_operator(t_lexer *lexer, t_token *token)
+{
+	if (lexer->tokens.len > 0)
+	{
+		if (ft_isnumber(((t_token *)lexer->tokens.elem[lexer->tokens.len - 1])->str) &&
+				((t_token *)lexer->tokens.elem[lexer->tokens.len - 1])->type == UKNOWN &&
+				ft_is_str_in_args(token->str, 5, ">", ">&", ">>", "<", "<&"))
+			((t_token *)lexer->tokens.elem[lexer->tokens.len - 1])->type = IO_NUMBER;
+		else
+			((t_token *)lexer->tokens.elem[lexer->tokens.len - 1])->type = WORD;
+	}
+	push_ftvector(&lexer->tokens, token);
+	token = 0;
+	return (token);
+}
+
+int					lexing_is_operator_begin(char buf)
+{
+	int			i;
+	extern char	*operators[AM_OPERATORS];
+
+	i = -1;
+	if (!buf)
+		return (0);
+	while (++i < AM_OPERATORS)
+		if (buf == operators[i][0])
+			return (1);
+	return (0);
+}
+
+t_token				*lexing_init_operator_token(char buf, t_token *token, t_lexer *lexer)
+{
+	if (token && token->str)
+		push_ftvector(&lexer->tokens, token);
+	token = (t_token *)malloc(sizeof(t_token));
+	token->str = (char *)ft_memalloc(2);
+	token->str[0] = buf;
+	token->type = OPERATOR;
+	return (token);
+}
+
+t_token				*lexing_handling_quotes(t_lexer *lexer, t_token *token, char **last,
+		char **command)
+{
+	char	delim;
+	char	*temp;
+
+	delim = **last;
+	while (1)
+	{
+		++(*last);
+		if (**last == delim)
+			break ;
+		if (!token)
+			token = (t_token *)ft_memalloc(sizeof(t_token));
+		if (!**last)
+		{
+			temp = ft_chrjoin(token->str, '\n');
+			free(token->str);
+			token->str = temp;
+			free(*command);
+			*command = input_command();
+			*last = *command - 1;
+			continue ;
+		}
+		temp = ft_chrjoin(token->str, **last);
+		free(token->str);
+		token->str = temp;
+	}
+	return (token);
+}
+
+int					lexing_handling_end(t_lexer *lexer, t_token *token)
+{
+	if (token && token->str)
+	{
+		token->type = WORD;
+		push_ftvector(&lexer->tokens, token);
+	}
+	return (1);
+}
+
+t_token				*lexing_handling_separator(t_lexer *lexer, t_token *token)
+{
+	if (token && token->str)
+	{
+		token->type = WORD;
+		push_ftvector(&lexer->tokens, token);
+	}
+	token = NULL;
+	return (token);
+}
+
+void				lexing_handling_appword(t_token *token, char buf)
+{
+	char	*temp;
+
+	temp = ft_chrjoin(token->str, buf);
+	free(token->str);
+	token->str = temp;
+}
+
+t_token				*lexing_handling_initword(t_token *token, char buf)
+{
+	token = (t_token *)malloc(sizeof(t_token));
+	token->str = (char *)ft_memalloc(2);
+	token->str[0] = buf;
+	token->type = UKNOWN;
+	return (token);
+}
+
+void				lexing_print(t_lexer *lexer)
+{
+	int i;
+
+	i = 0;
+	ft_printf("\n");
+	while (i < lexer->tokens.len)
+	{
+		ft_printf("%s | %d\n", ((t_token *)lexer->tokens.elem[i])->str, ((t_token *)lexer->tokens.elem[i])->type);
+		++i;
+	}
+	ft_printf("\n");
 }
 
 void				tilde_expansion(t_ftvector *line)
@@ -157,137 +268,46 @@ void				tilde_expansion(t_ftvector *line)
 	}
 }
 
-//char				*read_until(t_lexer *lexer, char delim)
-//{
-//	char buf[8];
-//	char *ret;
-//	char *temp;
-//
-//	ret = 0;
-//	while (1)
-//	{
-//		ft_bzero(buf, sizeof(buf));
-//		read(0, buf, sizeof(buf));
-//		if (!ft_strcmp(buf, delim))
-//			break ;
-//		temp = ret;
-//		ret = ft_strjoin(ret, buf);
-//		free(temp);
-//		write(1, buf, sizeof(buf));
-//	}
-//	write(1, buf, sizeof(buf));
-//	return (ret);
-//}
+void				lexer_creating_cycle(char **command, t_lexer *lexer,
+		t_token *token, char *last)
+{
+	while (1)
+	{
+		++last;
+		if (token && token->type == OPERATOR)
+		{
+			if (lexing_try_append_operator(*last, &token->str))
+				continue ;
+			token = lexing_divide_operator(lexer, token);
+		}
+		if (lexing_is_operator_begin(*last))
+		{
+			token = lexing_init_operator_token(*last, token, lexer);
+			continue ;
+		}
+		else if ('\"' == *last || '\'' == *last)
+			token = lexing_handling_quotes(lexer, token, &last, command);
+		else if (!*last && lexing_handling_end(lexer, token))
+			break ;
+		else if (ft_strchr(" \t", *last))
+			token = lexing_handling_separator(lexer, token);
+		else if (token && token->type == UKNOWN)
+			lexing_handling_appword(token, *last);
+		else
+			token = lexing_handling_initword(token, *last);
+	}
+}
 
 void				lexer_creating(char *command, t_lexer *lexer)
 {
-	char		*temp;
 	t_token		*token;
-	char		buf;
-	int			j;
+	char		*last;
 
-	token = (t_token *)ft_memalloc(sizeof(t_token));
+	token = NULL;
+	last = command - 1;
 	init_ftvector(&lexer->tokens);
-	j = -1;
-	while (1)
-	{
-		++j;
-		buf = command[j];
-		if (token->type == OPERATOR)
-		{
-			if (try_append_operator(buf, &token->str))
-				continue ;
-			if (token->str)
-			{
-				if (lexer->tokens.len > 0 && ft_isnumber(((t_token *)lexer->tokens.elem[lexer->tokens.len - 1])->str)
-						&& ((t_token *)lexer->tokens.elem[lexer->tokens.len - 1])->type == UKNOWN &&
-						(token->str[0] == '>' || (token->str[0] == '<' && token->str[1] != '<')))
-					((t_token *)lexer->tokens.elem[lexer->tokens.len - 1])->type = IO_NUMBER;
-				else
-					((t_token *)lexer->tokens.elem[lexer->tokens.len - 1])->type = WORD;
-				push_ftvector(&lexer->tokens, token);
-				token = (t_token *)ft_memalloc(sizeof(t_token));
-			}
-		}
-		if (identify_operator(buf))
-		{
-			if (token->str)
-			{
-				push_ftvector(&lexer->tokens, token);
-				token = (t_token *)malloc(sizeof(t_token));
-			}
-			token->str = (char *)ft_memalloc(2);
-			token->str[0] = buf;
-			token->type = OPERATOR;
-			continue ;
-		}
-		else if ('\"' == buf || '\'' == buf)
-		{
-			token->type = UKNOWN;
-			char	delim;
-			delim = buf;
-			while (1)
-			{
-				++j;
-				buf = command[j];
-				if (buf == delim)
-					break ;
-				if (!buf)
-				{
-					temp = ft_chrjoin(token->str, '\n');
-					free(token->str);
-					token->str = temp;
-					free(command);
-					command = input_command();
-					j = -1;
-					continue ;
-				}
-				temp = ft_chrjoin(token->str, buf);
-				free(token->str);
-				token->str = temp;
-			}
-		}
-		else if (!buf)
-		{
-			if (token->str)
-			{
-				token->type = WORD;
-				push_ftvector(&lexer->tokens, token);
-			}
-			break ;
-		}
-		else if (ft_strchr(" \t", buf))
-		{
-			if (token->str)
-			{
-				push_ftvector(&lexer->tokens, token);
-				token->type = WORD;
-				token = (t_token *)ft_memalloc(sizeof(t_token));
-			}
-		}
-		else if (token->type == UKNOWN)
-		{
-			temp = ft_chrjoin(token->str, buf);
-			free(token->str);
-			token->str = temp;
-		}
-		else
-		{
-			token->str = (char *)ft_memalloc(2);
-			token->str[0] = buf;
-			token->type = UKNOWN;
-		}
-	}
-	//lexer_creating_mbmore(lexer);
-	//tilde_expansion(&lexer->tokens);
-	int i = 0;
-	ft_printf("\n");
-	while (i < lexer->tokens.len)
-	{
-		ft_printf("%s | %d\n", ((t_token *)lexer->tokens.elem[i])->str, ((t_token *)lexer->tokens.elem[i])->type);
-		++i;
-	}
-	ft_printf("\n");
+	lexer_creating_cycle(&command, lexer, token, last);
+	lexing_print(lexer);
 	free(command);
 }
 
@@ -307,16 +327,17 @@ void				free_lexer(t_lexer *lexer)
 
 char				*(separator_op[AM_LEVELS][AM_SEPARATOROP]) =
 {
-	{ ";", "&" },
-	{ "|", "|" }
+	{ ";", NULL },
+	{ "|", NULL }
 };
 
 char				*(io_file_op[AM_IOFILEOP]) =
 {
-	"<", "<&", ">", ">&", ">>", "<>", ">|"
+	"<", "<&", ">", ">&", ">>", NULL
 };
 
-int					first_token_pos(t_lexer *lexer, int beg, int end, char **findname, int names, t_tokentype tokentype)
+int					first_token_pos(t_lexer *lexer, int beg, int end,
+		char **findname)
 {
 	int		i;
 	int		j;
@@ -325,32 +346,30 @@ int					first_token_pos(t_lexer *lexer, int beg, int end, char **findname, int n
 	while (++i <= end)
 	{
 		j = -1;
-		while (++j < names)
+		while (findname[++j])
 			if (ft_strequ(((t_token *)lexer->tokens.elem[i])->str, findname[j]) &&
-					((t_token *)lexer->tokens.elem[i])->type == tokentype)
+					((t_token *)lexer->tokens.elem[i])->type == OPERATOR)
 				return (i);
 	}
 	return (-1);
 }
 
-int					last_token_pos(t_lexer *lexer, int beg, int end, char **findname, int names, t_tokentype tokentype)
+int					last_token_pos(t_lexer *lexer, int beg, int end,
+		char **findname)
 {
 	int		i;
 	int		j;
-	int		lasttokenpos;
 
-	// TODO: start find from end
-	lasttokenpos = -1;
-	i = beg - 1;
-	while (++i <= end)
+	i = end + 1;
+	while (--i >= beg)
 	{
 		j = -1;
-		while (++j < names)
+		while (findname[++j])
 			if (ft_strequ(((t_token *)lexer->tokens.elem[i])->str, findname[j]) &&
-					((t_token *)lexer->tokens.elem[i])->type == tokentype)
-				lasttokenpos = i;
+					((t_token *)lexer->tokens.elem[i])->type == OPERATOR)
+				return (i);
 	}
-	return (lasttokenpos);
+	return (-1);
 }
 
 t_ast				*create_command(t_lexer *lexer, int beg, int end)
@@ -384,14 +403,18 @@ t_ast				*create_redirection_ast(t_lexer *lexer, int beg, int end)
 	int			pos;
 	char		*temp;
 
-	if ((pos = first_token_pos(lexer, beg, end, io_file_op, AM_IOFILEOP, OPERATOR)) == -1)
+	if ((pos = first_token_pos(lexer, beg, end, io_file_op)) == -1)
 		return (create_command(lexer, beg, end));
 	ast = (t_ast *)ft_memalloc(sizeof(t_ast));
 	ast->content = (void *)ft_strdup(((t_token *)lexer->tokens.elem[pos])->str);
 	ast->type = REDIRECTION;
 	((t_token *)lexer->tokens.elem[pos])->type = USED;
+	if (lexer->tokens.len <= pos + 1 || pos + 1 > end)
+	{
+		ft_fprintf(2, "21sh: parse error - redirection word missed\n");
+		return (0);
+	}
 
-	// TODO: to free if parse error
 	ast->right = (t_ast *)ft_memalloc(sizeof(t_ast));
 	ast->right->content = (t_binary_token *)ft_memalloc(sizeof(t_binary_token));
 
@@ -401,13 +424,6 @@ t_ast				*create_redirection_ast(t_lexer *lexer, int beg, int end)
 		((t_binary_token *)ast->right->content)->left = ((t_token *)lexer->tokens.elem[pos - 1])->str;
 		((t_token *)lexer->tokens.elem[pos - 1])->type = USED;
 	}
-
-	// check ast->right correct input
-	if (lexer->tokens.len <= pos + 1 || pos + 1 > end)
-	{
-		ft_fprintf(2, "21sh: parse error - redirection word missed\n");
-		return (0);
-	}
 	((t_binary_token *)ast->right->content)->right = ((t_token *)lexer->tokens.elem[pos + 1])->str;
 	ast->right->type = USED;
 	((t_token *)lexer->tokens.elem[pos + 1])->type = USED;
@@ -416,35 +432,51 @@ t_ast				*create_redirection_ast(t_lexer *lexer, int beg, int end)
 	return (ast);
 }
 
+t_ast				*create_separator_ast(t_lexer *lexer, int beg, int end, int level);
+
+t_ast				*create_separator_ast_notfound(t_lexer *lexer,
+		int beg, int end, int level)
+{
+	if (level == 1)
+		return (create_redirection_ast(lexer, beg, end));
+	else
+		return (create_separator_ast(lexer, beg, end, level + 1));
+}
+
 t_ast				*create_separator_ast(t_lexer *lexer, int beg, int end, int level)
 {
 	int		pos;
 	t_ast	*ast;
 
-	if ((pos = last_token_pos(lexer, beg, end, separator_op[level], AM_SEPARATOROP, OPERATOR)) == -1)
-	{
-		if (level == AM_LEVELS - 1)
-			return (create_redirection_ast(lexer, beg, end));
-		else
-			return (create_separator_ast(lexer, beg, end, level + 1));
-	}
-	ast = (t_ast *)ft_memalloc(sizeof(t_ast));
+	if ((pos = last_token_pos(lexer, beg, end, separator_op[level])) == -1)
+		return (create_separator_ast_notfound(lexer, beg, end, level));
 	if (lexer->tokens.len <= pos + 1 || !pos)
 	{
-		ft_fprintf(2, "21sh: parse error - pipe incorrect position\n");
+		ft_fprintf(2, "21sh: parse operator error - incorrect position\n");
 		return (0);
 	}
+	ast = (t_ast *)ft_memalloc(sizeof(t_ast));
 	ast->content = (void *)ft_strdup(((t_token *)lexer->tokens.elem[pos])->str);
 	ast->type = OPERATOR;
 	if (!(ast->left = create_separator_ast(lexer, beg, pos - 1, level)))
+	{
+		free(ast->content);
+		free(ast);
 		return (0);
-	if (level != AM_LEVELS - 1)
+	}
+	if (level != 1)
 	{
 		if (!(ast->right = create_separator_ast(lexer, pos + 1, end, level + 1)))
+		{
 			return (0);
+		}
 	}
 	else if (!(ast->right = create_redirection_ast(lexer, pos + 1, end)))
-			return (0);
+	{
+		free(ast->content);
+		free(ast);
+		return (0);
+	}
 	return (ast);
 }
 
@@ -643,43 +675,34 @@ void				free_ast(t_ast *ast)
 	free(ast);
 }
 
-void				zombie_handler(int sig)
+void				preparation(t_initfd *initfd, char ***env)
 {
-//	printf("SIGCHLD!\n");
+	term_associate();
+	initfd->fdin = dup(0);
+	initfd->fdout = dup(1);
+	*env = fill_env();
+	//signal(SIGINT, int_handler);
 }
 
 int					main(void)
 {
-//	char		*line;
-//	int			i;
 	char		**env;
-	t_comm_corr	commands[AM_COMMANDS];
 	char		*command;
 	t_lexer		lexer;
 	t_ast		*ast;
 	t_initfd	initfd;
-//	char		**args;
 
-	initfd.fdin = dup(0);
-	initfd.fdout = dup(1);
-	g_sigint = 0;
-	//signal(SIGINT, int_handler);
-	signal(SIGCHLD, zombie_handler);
-	//fill_commands(commands);
-	env = fill_env();
-	term_associate();
-	change_termios(&initfd, 0);
+	preparation(&initfd, &env);
 	while (1)
 	{
+		change_termios(&initfd, 0);
 		ft_bzero(&lexer, sizeof(t_lexer));
-		ft_bzero(&ast, sizeof(t_ast));
 		ft_printf("$> ");
-		g_sigint = 0;
-		command = input_command();
+		if (!(command = input_command()))
+			continue ;
 		lexer_creating(command, &lexer);
 		if (!lexer.tokens.len)
 		{
-			ft_fprintf(2, "21sh: lexing error\n");
 			free_lexer(&lexer);
 			continue ;
 		}
@@ -687,18 +710,9 @@ int					main(void)
 		print_ast(ast);
 		change_termios(&initfd, 1);
 		parse_ast(ast, &env, 0, &initfd, 0);
-		change_termios(&initfd, 0);
 		free_lexer(&lexer);
 		free_ast(ast);
 //		system("leaks -quiet 21sh");
-//		get_next_line(0, &line);
-//		g_sigint = 1;
-//		args = ft_strsplit(line, ';');
-//		i = -1;
-//		while (args[++i])
-//			handle_commands(args[i], commands, &env);
-//		free_double_arr(args);
-//		free(line);
 	}
 	free_double_arr(env);
 	return (0);

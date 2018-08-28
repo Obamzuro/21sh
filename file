@@ -1,20 +1,2 @@
-1
+ls: 3: No such file or directory
 2
-21sh
-Makefile
-a.out
-a.out.dSYM
-author
-file
-file2
-ftprintf
-in
-in.dSYM
-include
-input.c
-libft
-out
-out.dSYM
-output.c
-source
-test.c
