@@ -6,7 +6,7 @@
 /*   By: obamzuro <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/05/13 15:05:22 by obamzuro          #+#    #+#             */
-/*   Updated: 2018/08/29 00:31:54 by obamzuro         ###   ########.fr       */
+/*   Updated: 2018/08/29 00:41:34 by obamzuro         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -413,6 +413,8 @@ t_ast				*create_redirection_ast(t_lexer *lexer, int beg, int end)
 	if (lexer->tokens.len <= pos + 1 || pos + 1 > end)
 	{
 		ft_fprintf(2, "21sh: parse error - redirection word missed\n");
+		free(ast->content);
+		free(ast);
 		return (0);
 	}
 
@@ -429,7 +431,11 @@ t_ast				*create_redirection_ast(t_lexer *lexer, int beg, int end)
 	ast->right->type = USED;
 	((t_token *)lexer->tokens.elem[pos + 1])->type = USED;
 	if (!ast->left && !(ast->left = create_redirection_ast(lexer, beg, end)))
+	{
+		free(ast->content);
+		free(ast);
 		return (0);
+	}
 	return (ast);
 }
 
@@ -460,14 +466,26 @@ t_ast				*create_separator_ast(t_lexer *lexer, int beg, int end, int level)
 	ast->content = (void *)ft_strdup(((t_token *)lexer->tokens.elem[pos])->str);
 	ast->type = OPERATOR;
 	if (!(ast->left = create_separator_ast(lexer, beg, pos - 1, level)))
+	{
+		free(ast->content);
+		free(ast);
 		return (0);
+	}
 	if (level != 1)
 	{
 		if (!(ast->right = create_separator_ast(lexer, pos + 1, end, level + 1)))
+		{
+			free(ast->content);
+			free(ast);
 			return (0);
+		}
 	}
 	else if (!(ast->right = create_redirection_ast(lexer, pos + 1, end)))
+	{
+		free(ast->content);
+		free(ast);
 		return (0);
+	}
 	return (ast);
 }
 
