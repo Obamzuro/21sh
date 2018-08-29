@@ -6,7 +6,7 @@
 /*   By: obamzuro <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/05/13 15:05:22 by obamzuro          #+#    #+#             */
-/*   Updated: 2018/08/29 00:41:34 by obamzuro         ###   ########.fr       */
+/*   Updated: 2018/08/29 18:22:26 by obamzuro         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -36,6 +36,17 @@ static int			handle_commands(char **args,
 	}
 	if (i == AM_COMMANDS)
 		return (0);
+	return (1);
+}
+
+int					free_ast(t_ast *ast)
+{
+	if (!ast)
+		return (1);
+	free_ast(ast->left);
+	free_ast(ast->right);
+	free(ast->content);
+	free(ast);
 	return (1);
 }
 
@@ -396,46 +407,45 @@ t_ast				*create_command(t_lexer *lexer, int beg, int end)
 	return (ast);
 }
 
+t_ast				*create_redirection_ast_content(t_lexer *lexer, int pos)
+{
+	t_ast	*ast;
+
+	ast = (t_ast *)ft_memalloc(sizeof(t_ast));
+	ast->content = (void *)ft_strdup(((t_token *)lexer->tokens.elem[pos])->str);
+	ast->type = REDIRECTION;
+	((t_token *)lexer->tokens.elem[pos])->type = USED;
+	ast->right = (t_ast *)ft_memalloc(sizeof(t_ast));
+//	ast->right->type = USED;
+	ast->right->content = (t_binary_token *)ft_memalloc(sizeof(t_binary_token));
+	((t_binary_token *)ast->right->content)->right = ((t_token *)lexer->tokens.elem[pos + 1])->str;
+	return (ast);
+}
+
 t_ast				*create_redirection_ast(t_lexer *lexer, int beg, int end)
 {
 	t_ast		*ast;
-	int			i;
 	char		*str;
 	int			pos;
 	char		*temp;
 
 	if ((pos = first_token_pos(lexer, beg, end, io_file_op)) == -1)
 		return (create_command(lexer, beg, end));
-	ast = (t_ast *)ft_memalloc(sizeof(t_ast));
-	ast->content = (void *)ft_strdup(((t_token *)lexer->tokens.elem[pos])->str);
-	ast->type = REDIRECTION;
-	((t_token *)lexer->tokens.elem[pos])->type = USED;
 	if (lexer->tokens.len <= pos + 1 || pos + 1 > end)
 	{
 		ft_fprintf(2, "21sh: parse error - redirection word missed\n");
-		free(ast->content);
-		free(ast);
+		free_ast(ast);
 		return (0);
 	}
-
-	ast->right = (t_ast *)ft_memalloc(sizeof(t_ast));
-	ast->right->content = (t_binary_token *)ft_memalloc(sizeof(t_binary_token));
-
-	// try to catch previous token
+	ast = create_redirection_ast_content(lexer, pos);
 	if (pos >= 1 && ((t_token *)lexer->tokens.elem[pos - 1])->type == IO_NUMBER)
 	{
 		((t_binary_token *)ast->right->content)->left = ((t_token *)lexer->tokens.elem[pos - 1])->str;
 		((t_token *)lexer->tokens.elem[pos - 1])->type = USED;
 	}
-	((t_binary_token *)ast->right->content)->right = ((t_token *)lexer->tokens.elem[pos + 1])->str;
-	ast->right->type = USED;
 	((t_token *)lexer->tokens.elem[pos + 1])->type = USED;
-	if (!ast->left && !(ast->left = create_redirection_ast(lexer, beg, end)))
-	{
-		free(ast->content);
-		free(ast);
+	if (!(ast->left = create_redirection_ast(lexer, beg, end)) && free_ast(ast))
 		return (0);
-	}
 	return (ast);
 }
 
@@ -465,29 +475,18 @@ t_ast				*create_separator_ast(t_lexer *lexer, int beg, int end, int level)
 	ast = (t_ast *)ft_memalloc(sizeof(t_ast));
 	ast->content = (void *)ft_strdup(((t_token *)lexer->tokens.elem[pos])->str);
 	ast->type = OPERATOR;
-	if (!(ast->left = create_separator_ast(lexer, beg, pos - 1, level)))
-	{
-		free(ast->content);
-		free(ast);
+	if (!(ast->left = create_separator_ast(lexer, beg, pos - 1, level)) && free_ast(ast))
 		return (0);
-	}
-	if (level != 1)
-	{
-		if (!(ast->right = create_separator_ast(lexer, pos + 1, end, level + 1)))
-		{
-			free(ast->content);
-			free(ast);
-			return (0);
-		}
-	}
-	else if (!(ast->right = create_redirection_ast(lexer, pos + 1, end)))
-	{
-		free(ast->content);
-		free(ast);
+	if (!level && !(ast->right = create_separator_ast(lexer, pos + 1, end, level + 1)) &&
+			free_ast(ast))
 		return (0);
-	}
+	else if (level == 1 && !(ast->right = create_redirection_ast(lexer, pos + 1, end)) &&
+			free_ast(ast))
+		return (0);
 	return (ast);
 }
+
+int						parse_ast(t_ast *ast, char ***env, t_initfd *initfd, int ispipe);
 
 void				print_ast(t_ast *ast)
 {
@@ -513,175 +512,177 @@ void				print_ast(t_ast *ast)
 	}
 }
 
-int						parse_ast(t_ast *ast, char ***env, int ispipe, t_initfd *initfd, int isfork)
+int						parse_ast_pipe_out(t_ast *ast, char ***env,
+		t_initfd *initfd, int fdpipe[2])
 {
-	int			fd;
-	int			newfd;
-	int			oldfd[2];
-	int			fdin;
-	int			fdout;
+	pid_t	pid;
+
+	pid = fork();
+	if (pid < 0)
+	{
+		ft_fprintf(2, "21sh: Error creating subprocess");
+		return (-1);
+	}
+	if (!pid)
+	{
+		close(fdpipe[0]);
+		dup2(fdpipe[1], 1);
+		close(fdpipe[1]);
+		parse_ast(ast->left, env, initfd, 1);
+		exit(0);
+	}
+	return (pid);
+}
+
+int						parse_ast_pipe_in(t_ast *ast, char ***env,
+		t_initfd *initfd, int fdpipe[2])
+{
+	pid_t	pid;
+
+	pid = fork();
+	if (pid < 0)
+	{
+		ft_fprintf(2, "21sh: Error creating subprocess");
+		return (-1);
+	}
+	if (!pid)
+	{
+		close(fdpipe[1]);
+		dup2(fdpipe[0], 0);
+		close(fdpipe[0]);
+		parse_ast(ast->right, env, initfd, 1);
+		exit(0);
+	}
+	return (pid);
+}
+
+int						parse_ast_pipe(t_ast *ast, char ***env, t_initfd *initfd)
+{
 	int			fdpipe[2];
-	char		**args;
-	int			process;
 	pid_t		pid[2];
 
-	if (!ast)
-		return (0);
-	if (ast->type == OPERATOR && ((char *)ast->content)[0] == ';' && !((char *)ast->content)[1])
+	pipe(fdpipe);
+	if ((pid[0] = parse_ast_pipe_out(ast, env, initfd, fdpipe)) == -1)
 	{
-		parse_ast(ast->left, env, 0, initfd, 0);
-		parse_ast(ast->right, env, 0, initfd, 0);
-		return (process);
-	}
-	else if (ast->type == OPERATOR && ((char *)ast->content)[0] == '|' && !((char *)ast->content)[1])
-	{
-		pipe(fdpipe);
-		pid[0] = fork();
-		change_termios(initfd, 1);
-		if (pid[0] < 0)
-		{
-			ft_fprintf(2, "21sh: Error creating subprocess");
-			exit(1);
-		}
-		if (!pid[0])
-		{
-			close(fdpipe[0]);
-			dup2(fdpipe[1], 1);
-			close(fdpipe[1]);
-			parse_ast(ast->left, env, 1, initfd, 0);
-			exit(0);
-		}
-		pid[1] = fork();
-		if (pid[1] < 0)
-		{
-			ft_fprintf(2, "21sh: Error creating subprocess");
-			exit(1);
-		}
-		if (!pid[1])
-		{
-			close(fdpipe[1]);
-			dup2(fdpipe[0], 0);
-			close(fdpipe[0]);
-			parse_ast(ast->right, env, 1, initfd, 0);
-			exit(0);
-		}
 		close(fdpipe[0]);
 		close(fdpipe[1]);
-		waitpid(pid[0], 0, 0);
-		waitpid(pid[1], 0, 0);
-		change_termios(initfd, 0);
-//		oldfd[0] = dup(0);
-//		oldfd[1] = dup(1);
-//		pipe(fdpipe);
-//		dup2(fdpipe[1], 1);
-//		close(fdpipe[1]);
-//		parse_ast(ast->left, env, 1);
-//		dup2(fdpipe[0], 0);
-//		close(fdpipe[0]);
-//		dup2(oldfd[1], 1);
-//		close(oldfd[1]);
-//		process = parse_ast(ast->right, env, 1);
-//		if (!ispipe)
-//			waitpid(process, 0, 0);
-//		dup2(oldfd[0], 0);
-//		close(oldfd[0]);
-//		return (process);
+		return (0);
 	}
-	else if (ast->type == REDIRECTION)
+	if ((pid[1] = parse_ast_pipe_in(ast, env, initfd, fdpipe)) == -1)
 	{
-		isfork = 1;
-		if (!fork())
+		close(fdpipe[0]);
+		close(fdpipe[1]);
+		kill(pid[0], SIGINT);
+		return (0);
+	}
+	close(fdpipe[0]);
+	close(fdpipe[1]);
+	waitpid(pid[0], 0, 0);
+	waitpid(pid[1], 0, 0);
+	return (1);
+}
+
+int						parse_ast_command(t_ast *ast, char ***env,
+		t_initfd *initfd, int ispipe)
+{
+	char	**args;
+
+	args = ft_strsplit(ast->content, ' ');
+	if (!handle_commands(args, env))
+	{
+		if (!ispipe)
 		{
-			if (((t_binary_token *)(ast->right->content))->left)
-				fd = ft_atoi(((t_binary_token *)(ast->right->content))->left);
-			else if (((char *)ast->content)[0] == '>')
-			{
-				if (!((char *)ast->content)[1])
-					fd = 1;
-				else if (((char *)ast->content)[1] == '>' && !((char *)ast->content)[2])
-					fd = 1;
-			}
-			else if (((char *)ast->content)[0] == '<' && !((char *)ast->content)[1])
-				fd = 0;
-			if (((char *)ast->content)[0] == '>')
-			{
-				if (!((char *)ast->content)[1])
-					newfd = open(((t_binary_token *)(ast->right->content))->right, O_WRONLY | O_CREAT | O_TRUNC, 0644);
-				else if (((char *)ast->content)[1] == '&' && !((char *)ast->content)[2])
-					newfd = ft_atoi(((t_binary_token *)(ast->right->content))->right);
-				else if (((char *)ast->content)[1] == '>' && !((char *)ast->content)[2])
-					newfd = open(((t_binary_token *)(ast->right->content))->right, O_WRONLY | O_CREAT | O_APPEND, 0644);
-			}
-			if (((char *)ast->content)[0] == '<')
-			{
-				if (!((char *)ast->content)[1])
-					newfd = open(((t_binary_token *)(ast->right->content))->right, O_RDONLY, 0644);
-				else if (((char *)ast->content)[1] == '&' && !((char *)ast->content)[2])
-					newfd = ft_atoi(((t_binary_token *)(ast->right->content))->right);
-			}
-			if (newfd == -1)
-			{
-				ft_fprintf(2, "sh: %s: No such file or directory\n", ((t_binary_token *)(ast->right->content))->right);
+			if (ft_exec(args, env, 1) == -1)
 				return (0);
-			}
-			if (((char *)ast->content)[1] != '&')
-			{
-				oldfd[0] = dup(fd);
-				dup2(newfd, fd);
-				close(newfd);
-				process = parse_ast(ast->left, env, ispipe, initfd, 1);
-				dup2(oldfd[0], fd);
-				close(oldfd[0]);
-			}
-			else
-			{
-				oldfd[0] = dup(fd);
-				if (ft_strequ(((t_binary_token *)(ast->right->content))->right, "-"))
-					close(fd);
-				else
-					dup2(newfd, fd);
-				process = parse_ast(ast->left, env, ispipe, initfd, 1);
-				dup2(oldfd[0], fd);
-				close(oldfd[0]);
-			}
+			wait(0);
 		}
-		wait(0);
-		return (process);
+		else if (ft_exec(args, env, 0) == -1)
+			return (0);
 	}
-	else if (ast->type == COMMAND)
-	{
-		args = ft_strsplit2(ast->content, " \t");
-		if (!handle_commands(args, env))
-		{
-			if (!ispipe)
-			{
-//				change_termios(initfd, 1);
-				if (!isfork)
-				{
-					process = ft_exec(args, env, 1);
-					wait(0);
-				}
-				else
-					process = ft_exec(args, env, 0);
-//				change_termios(initfd, 0);
-			}
-			else
-				process = ft_exec(args, env, 0);
-		}
-		free_double_arr(args);
-		return (process);
-	}
+	free_double_arr(args);
 	return (0);
 }
 
-void				free_ast(t_ast *ast)
+int						parse_ast(t_ast *ast, char ***env, t_initfd *initfd, int ispipe)
 {
 	if (!ast)
-		return ;
-	free_ast(ast->left);
-	free_ast(ast->right);
-	free(ast->content);
-	free(ast);
+		return (0);
+	if (ast->type == OPERATOR && ft_strequ(ast->content, ";"))
+	{
+		if (!parse_ast(ast->left, env, initfd, 0))
+			return (0);
+		if (!parse_ast(ast->right, env, initfd, 0))
+			return (0);
+	}
+	else if (ast->type == OPERATOR && ft_strequ(ast->content, "|"))
+	{
+		if (!parse_ast_pipe(ast, env, initfd))
+			return (0);
+	}
+//	else if (ast->type == REDIRECTION)
+//	{
+//		isfork = 1;
+//		if (!fork())
+//		{
+//			if (((t_binary_token *)(ast->right->content))->left)
+//				fd = ft_atoi(((t_binary_token *)(ast->right->content))->left);
+//			else if (((char *)ast->content)[0] == '>')
+//			{
+//				if (!((char *)ast->content)[1])
+//					fd = 1;
+//				else if (((char *)ast->content)[1] == '>' && !((char *)ast->content)[2])
+//					fd = 1;
+//			}
+//			else if (((char *)ast->content)[0] == '<' && !((char *)ast->content)[1])
+//				fd = 0;
+//			if (((char *)ast->content)[0] == '>')
+//			{
+//				if (!((char *)ast->content)[1])
+//					newfd = open(((t_binary_token *)(ast->right->content))->right, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+//				else if (((char *)ast->content)[1] == '&' && !((char *)ast->content)[2])
+//					newfd = ft_atoi(((t_binary_token *)(ast->right->content))->right);
+//				else if (((char *)ast->content)[1] == '>' && !((char *)ast->content)[2])
+//					newfd = open(((t_binary_token *)(ast->right->content))->right, O_WRONLY | O_CREAT | O_APPEND, 0644);
+//			}
+//			if (((char *)ast->content)[0] == '<')
+//			{
+//				if (!((char *)ast->content)[1])
+//					newfd = open(((t_binary_token *)(ast->right->content))->right, O_RDONLY, 0644);
+//				else if (((char *)ast->content)[1] == '&' && !((char *)ast->content)[2])
+//					newfd = ft_atoi(((t_binary_token *)(ast->right->content))->right);
+//			}
+//			if (newfd == -1)
+//			{
+//				ft_fprintf(2, "sh: %s: No such file or directory\n", ((t_binary_token *)(ast->right->content))->right);
+//				return (0);
+//			}
+//			if (((char *)ast->content)[1] != '&')
+//			{
+//				oldfd[0] = dup(fd);
+//				dup2(newfd, fd);
+//				close(newfd);
+//				parse_ast(ast->left, env, ispipe, initfd, 1);
+//				dup2(oldfd[0], fd);
+//				close(oldfd[0]);
+//			}
+//			else
+//			{
+//				oldfd[0] = dup(fd);
+//				if (ft_strequ(((t_binary_token *)(ast->right->content))->right, "-"))
+//					close(fd);
+//				else
+//					dup2(newfd, fd);
+//				parse_ast(ast->left, env, ispipe, initfd, 1);
+//				dup2(oldfd[0], fd);
+//				close(oldfd[0]);
+//			}
+//		}
+//		wait(0);
+//	}
+	else if (ast->type == COMMAND &&
+			!parse_ast_command(ast, env, initfd, ispipe))
+		return (0);
+	return (1);
 }
 
 void				preparation(t_initfd *initfd, char ***env)
@@ -718,7 +719,7 @@ int					main(void)
 		ast = create_separator_ast(&lexer, 0, lexer.tokens.len - 1, 0);
 		print_ast(ast);
 		change_termios(&initfd, 1);
-		parse_ast(ast, &env, 0, &initfd, 0);
+		parse_ast(ast, &env, &initfd, 0);
 		free_lexer(&lexer);
 		free_ast(ast);
 		system("leaks -quiet 21sh");

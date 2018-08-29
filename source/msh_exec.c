@@ -6,7 +6,7 @@
 /*   By: obamzuro <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/05/19 13:52:33 by obamzuro          #+#    #+#             */
-/*   Updated: 2018/08/23 18:09:59 by obamzuro         ###   ########.fr       */
+/*   Updated: 2018/08/29 18:14:53 by obamzuro         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,7 +26,7 @@ static char		*ft_exec_path_find_comm(char **args, char **paths)
 		{
 			if (access(temp, X_OK) == -1)
 			{
-				ft_fprintf(2, "minishell: Permission denied: %s\n", args[0]);
+				ft_fprintf(2, "21sh: Permission denied: %s\n", args[0]);
 				free(temp);
 				return (0);
 			}
@@ -36,7 +36,7 @@ static char		*ft_exec_path_find_comm(char **args, char **paths)
 		free(temp);
 		++i;
 	}
-	ft_fprintf(2, "minishell: command not found: %s\n", args[0]);
+	ft_fprintf(2, "21sh: command not found: %s\n", args[0]);
 	return (0);
 }
 
@@ -50,7 +50,7 @@ static char		*ft_exec_path(char **args, char ***env)
 	i = 0;
 	if (!paths)
 	{
-		ft_fprintf(2, "minishell: command not found: %s\n", args[0]);
+		ft_fprintf(2, "21sh: command not found: %s\n", args[0]);
 		return (0);
 	}
 	ret = ft_exec_path_find_comm(args, paths);
@@ -63,22 +63,22 @@ static int		ft_exec_check_err(char **args, char *comm)
 	struct stat	tempstat;
 
 	if (!comm)
-		return (0);
+		return (-1);
 	if (lstat(comm, &tempstat) == -1)
 	{
-		ft_fprintf(2, "minishell: no such file or directory: %s\n", comm);
+		ft_fprintf(2, "21sh: no such file or directory: %s\n", comm);
 		if (comm != args[0])
 			free(comm);
-		return (0);
+		return (-1);
 	}
 	if (!S_ISREG(tempstat.st_mode) || access(comm, X_OK) == -1)
 	{
-		ft_fprintf(2, "minishell: Permission denied: %s\n", comm);
+		ft_fprintf(2, "21sh: Permission denied: %s\n", comm);
 		if (comm != args[0])
 			free(comm);
-		return (0);
+		return (-1);
 	}
-	return (1);
+	return (0);
 }
 
 static int		ft_exec_fork(char **args, char ***env, char *comm)
@@ -90,8 +90,8 @@ static int		ft_exec_fork(char **args, char ***env, char *comm)
 	{
 		if (execve(comm, args, *env) == -1)
 		{
-			ft_fprintf(2, "minishell: File execution error: %s\n", comm);
-			exit(EXIT_FAILURE);
+			ft_fprintf(2, "21sh: File execution error: %s\n", comm);
+			return (-1);
 		}
 	}
 //	else if (process > 0)
@@ -100,10 +100,10 @@ static int		ft_exec_fork(char **args, char ***env, char *comm)
 //	}
 	else if (process < 0)
 	{
-		ft_fprintf(2, "Can't create a child thread\n");
-		return (0);
+		ft_fprintf(2, "21sh: Error creating a child thread\n");
+		return (-1);
 	}
-	return (process);
+	return (0);
 }
 
 int				ft_exec(char **args, char ***env, int forkneed)
@@ -116,23 +116,21 @@ int				ft_exec(char **args, char ***env, int forkneed)
 		comm = ft_exec_path(args, env);
 	else
 	{
-		if (args[0] && args[0][0] == '~')
-		{
-			temp = ft_strjoin(get_env("HOME", *env), args[0] + 1);
-			free(args[0]);
-			args[0] = temp;
-		}
+		//TODO: tilde expansion
+//		if (args[0] && args[0][0] == '~')
+//		{
+//			temp = ft_strjoin(get_env("HOME", *env), args[0] + 1);
+//			free(args[0]);
+//			args[0] = temp;
+//		}
 		comm = args[0];
 	}
-	if (!ft_exec_check_err(args, comm))
-		return (0);
+	if (ft_exec_check_err(args, comm) == -1)
+		return (-1);
 	if (forkneed)
 		ret = ft_exec_fork(args, env, comm);
 	else if ((ret = execve(comm, args, *env) == -1))
-	{
-		ft_fprintf(2, "minishell: File execution error: %s\n", comm);
-		exit(EXIT_FAILURE);
-	}
+		ft_fprintf(2, "21sh: File execution error: %s\n", comm);
 	// TODO: can "free" make problems for child process?
 	if (comm != args[0])
 		free(comm);
