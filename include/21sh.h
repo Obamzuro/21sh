@@ -6,7 +6,7 @@
 /*   By: obamzuro <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/07/04 11:35:30 by obamzuro          #+#    #+#             */
-/*   Updated: 2018/08/28 22:33:00 by obamzuro         ###   ########.fr       */
+/*   Updated: 2018/08/30 17:02:32 by obamzuro         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,7 +16,7 @@
 # define AM_OPERATORS 8
 # define AM_LEVELS 2
 # define AM_SEPARATOROP 2
-# define AM_IOFILEOP 6
+# define AM_IOFILEOP 7
 # include <unistd.h>
 # include <signal.h>
 # include <term.h>
@@ -42,6 +42,12 @@ typedef struct			s_initfd
 	int		fdin;
 	int		fdout;
 }						t_initfd;
+
+typedef struct			s_shell
+{
+	char		**env;
+	t_initfd	initfd;
+}						t_shell;
 
 typedef struct			s_border
 {

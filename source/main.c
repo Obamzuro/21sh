@@ -6,7 +6,7 @@
 /*   By: obamzuro <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/05/13 15:05:22 by obamzuro          #+#    #+#             */
-/*   Updated: 2018/08/29 18:22:26 by obamzuro         ###   ########.fr       */
+/*   Updated: 2018/08/30 17:33:27 by obamzuro         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -345,7 +345,7 @@ char				*(separator_op[AM_LEVELS][AM_SEPARATOROP]) =
 
 char				*(io_file_op[AM_IOFILEOP]) =
 {
-	"<", "<&", ">", ">&", ">>", NULL
+	"<", "<&", "<<", ">", ">&", ">>", NULL
 };
 
 int					first_token_pos(t_lexer *lexer, int beg, int end,
@@ -419,6 +419,7 @@ t_ast				*create_redirection_ast_content(t_lexer *lexer, int pos)
 //	ast->right->type = USED;
 	ast->right->content = (t_binary_token *)ft_memalloc(sizeof(t_binary_token));
 	((t_binary_token *)ast->right->content)->right = ((t_token *)lexer->tokens.elem[pos + 1])->str;
+	((t_token *)lexer->tokens.elem[pos + 1])->type = USED;
 	return (ast);
 }
 
@@ -443,7 +444,6 @@ t_ast				*create_redirection_ast(t_lexer *lexer, int beg, int end)
 		((t_binary_token *)ast->right->content)->left = ((t_token *)lexer->tokens.elem[pos - 1])->str;
 		((t_token *)lexer->tokens.elem[pos - 1])->type = USED;
 	}
-	((t_token *)lexer->tokens.elem[pos + 1])->type = USED;
 	if (!(ast->left = create_redirection_ast(lexer, beg, end)) && free_ast(ast))
 		return (0);
 	return (ast);
@@ -486,7 +486,7 @@ t_ast				*create_separator_ast(t_lexer *lexer, int beg, int end, int level)
 	return (ast);
 }
 
-int						parse_ast(t_ast *ast, char ***env, t_initfd *initfd, int ispipe);
+int						parse_ast(t_ast *ast, t_shell *shell, int needfork);
 
 void				print_ast(t_ast *ast)
 {
@@ -512,11 +512,17 @@ void				print_ast(t_ast *ast)
 	}
 }
 
-int						parse_ast_pipe_out(t_ast *ast, char ***env,
-		t_initfd *initfd, int fdpipe[2])
+int						parse_ast_pipe_child(t_ast *ast, t_shell *shell,
+		int fdpipe[2], int is_out)
 {
 	pid_t	pid;
+	int		a;
+	int		b;
+	t_ast	*side;
 
+	a = is_out ? 0 : 1;
+	b = is_out ? 1 : 0;
+	side = is_out ? ast->left : ast->right;
 	pid = fork();
 	if (pid < 0)
 	{
@@ -525,50 +531,32 @@ int						parse_ast_pipe_out(t_ast *ast, char ***env,
 	}
 	if (!pid)
 	{
-		close(fdpipe[0]);
-		dup2(fdpipe[1], 1);
-		close(fdpipe[1]);
-		parse_ast(ast->left, env, initfd, 1);
+		close(fdpipe[a]);
+		dup2(fdpipe[b], b);
+		close(fdpipe[b]);
+		parse_ast(side, shell, 0);
 		exit(0);
 	}
 	return (pid);
 }
 
-int						parse_ast_pipe_in(t_ast *ast, char ***env,
-		t_initfd *initfd, int fdpipe[2])
-{
-	pid_t	pid;
-
-	pid = fork();
-	if (pid < 0)
-	{
-		ft_fprintf(2, "21sh: Error creating subprocess");
-		return (-1);
-	}
-	if (!pid)
-	{
-		close(fdpipe[1]);
-		dup2(fdpipe[0], 0);
-		close(fdpipe[0]);
-		parse_ast(ast->right, env, initfd, 1);
-		exit(0);
-	}
-	return (pid);
-}
-
-int						parse_ast_pipe(t_ast *ast, char ***env, t_initfd *initfd)
+int						parse_ast_pipe(t_ast *ast, t_shell *shell)
 {
 	int			fdpipe[2];
 	pid_t		pid[2];
 
-	pipe(fdpipe);
-	if ((pid[0] = parse_ast_pipe_out(ast, env, initfd, fdpipe)) == -1)
+	if (pipe(fdpipe) == -1)
+	{
+		ft_fprintf(2, "21sh: pipe creating error");
+		return (0);
+	}
+	if ((pid[0] = parse_ast_pipe_child(ast, shell, fdpipe, 1)) == -1)
 	{
 		close(fdpipe[0]);
 		close(fdpipe[1]);
 		return (0);
 	}
-	if ((pid[1] = parse_ast_pipe_in(ast, env, initfd, fdpipe)) == -1)
+	if ((pid[1] = parse_ast_pipe_child(ast, shell, fdpipe, 0)) == -1)
 	{
 		close(fdpipe[0]);
 		close(fdpipe[1]);
@@ -582,130 +570,180 @@ int						parse_ast_pipe(t_ast *ast, char ***env, t_initfd *initfd)
 	return (1);
 }
 
-int						parse_ast_command(t_ast *ast, char ***env,
-		t_initfd *initfd, int ispipe)
+int						parse_ast_command(t_ast *ast, t_shell *shell,
+		int needfork)
 {
 	char	**args;
 
 	args = ft_strsplit(ast->content, ' ');
-	if (!handle_commands(args, env))
+	if (!handle_commands(args, &shell->env))
 	{
-		if (!ispipe)
+		if (needfork)
 		{
-			if (ft_exec(args, env, 1) == -1)
+			if (ft_exec(args, &shell->env, 1) == -1)
 				return (0);
 			wait(0);
 		}
-		else if (ft_exec(args, env, 0) == -1)
+		else if (ft_exec(args, &shell->env, 0) == -1)
 			return (0);
 	}
 	free_double_arr(args);
-	return (0);
+	return (1);
 }
 
-int						parse_ast(t_ast *ast, char ***env, t_initfd *initfd, int ispipe)
+int						parse_ast_redirection_right(t_ast *ast)
+{
+	int				rightfd;
+	t_binary_token	*binary_token;
+
+	rightfd = 0;
+	binary_token = (t_binary_token *)ast->right->content;
+	if (ft_strequ((char *)ast->content, ">"))
+		rightfd = open(binary_token->right, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+	else if (ft_strequ((char *)ast->content, ">>"))
+		rightfd = open(binary_token->right, O_WRONLY | O_CREAT | O_APPEND, 0644);
+	else if (ft_strequ((char *)ast->content, "<"))
+		rightfd = open(binary_token->right, O_RDONLY, 0644);
+	else if (ft_strequ((char *)ast->content, ">&") || ft_strequ((char *)ast->content, "<&"))
+		rightfd = ft_atoi(binary_token->right);
+	if (rightfd == -1)
+	{
+		ft_fprintf(2, "21sh: parse_redirection error\n", binary_token->right);
+		return (-1);
+	}
+	return (rightfd);
+}
+
+int						parse_ast_redirection_kernel_heredoc(t_ast *ast, t_shell *shell, int fd)
+{
+	int		pipefd[2];
+	int		oldfd;
+
+	if (pipe(pipefd) == -1)
+	{
+		ft_fprintf(2, "21sh: pipe creating error");
+		return (0);
+	}
+	dup2(pipefd[1], 0);
+	close(pipefd[1]);
+	return (1);
+}
+
+int						parse_ast_redirection_kernel(t_ast *ast, t_shell *shell,
+		int fd, int rightfd)
+{
+	int		oldfd;
+
+	oldfd = dup(fd);
+	if (ft_strequ(((t_binary_token *)(ast->right->content))->right, "-"))
+		close(fd);
+	else if (ft_strequ(ast->content, "<<"))
+	{
+		if (!parse_ast_redirection_kernel_heredoc(ast, shell, fd))
+			return (0);
+	}
+	else
+	{
+		dup2(rightfd, fd);
+		close(rightfd);
+	}
+	if (!parse_ast(ast->left, shell, 0))
+		return (0);
+	dup2(oldfd, fd);
+	close(oldfd);
+	return (1);
+}
+
+int						parse_ast_redirection_child(t_ast *ast, t_shell *shell)
+{
+	int			fd;
+	int			rightfd;
+
+	if (((t_binary_token *)(ast->right->content))->left)
+		fd = ft_atoi(((t_binary_token *)(ast->right->content))->left);
+	else if (((char *)ast->content)[0] == '>')
+		fd = 1;
+	else if (((char *)ast->content)[0] == '<')
+		fd = 0;
+	if ((rightfd = parse_ast_redirection_right(ast)) == -1)
+		return (0);
+	if (!parse_ast_redirection_kernel(ast, shell, fd, rightfd))
+		return (0);
+	return (1);
+}
+
+int						parse_ast_redirection(t_ast *ast, t_shell *shell,
+		int needfork)
+{
+//	pid_t		pid;
+//
+//	if (needfork)
+//	{
+//		pid = fork();
+//		if (pid < 0)
+//		{
+//			ft_fprintf(2, "21sh: fork error\n");
+//			return (0);
+//		}
+//		if (!pid)
+//		{
+//			if (!parse_ast_redirection_child(ast, shell))
+//				exit(1);
+//		}
+//		else if (needfork)
+//			wait(0);
+//		return (1);
+//	}
+//	if (!parse_ast_redirection_child(ast, shell))
+//		return (0);
+//	return (1);
+}
+
+int						parse_ast(t_ast *ast, t_shell *shell, int needfork)
 {
 	if (!ast)
 		return (0);
 	if (ast->type == OPERATOR && ft_strequ(ast->content, ";"))
 	{
-		if (!parse_ast(ast->left, env, initfd, 0))
+		if (!parse_ast(ast->left, shell, 1))
 			return (0);
-		if (!parse_ast(ast->right, env, initfd, 0))
+		if (!parse_ast(ast->right, shell, 1))
 			return (0);
 	}
 	else if (ast->type == OPERATOR && ft_strequ(ast->content, "|"))
 	{
-		if (!parse_ast_pipe(ast, env, initfd))
+		if (!parse_ast_pipe(ast, shell))
 			return (0);
 	}
-//	else if (ast->type == REDIRECTION)
-//	{
-//		isfork = 1;
-//		if (!fork())
-//		{
-//			if (((t_binary_token *)(ast->right->content))->left)
-//				fd = ft_atoi(((t_binary_token *)(ast->right->content))->left);
-//			else if (((char *)ast->content)[0] == '>')
-//			{
-//				if (!((char *)ast->content)[1])
-//					fd = 1;
-//				else if (((char *)ast->content)[1] == '>' && !((char *)ast->content)[2])
-//					fd = 1;
-//			}
-//			else if (((char *)ast->content)[0] == '<' && !((char *)ast->content)[1])
-//				fd = 0;
-//			if (((char *)ast->content)[0] == '>')
-//			{
-//				if (!((char *)ast->content)[1])
-//					newfd = open(((t_binary_token *)(ast->right->content))->right, O_WRONLY | O_CREAT | O_TRUNC, 0644);
-//				else if (((char *)ast->content)[1] == '&' && !((char *)ast->content)[2])
-//					newfd = ft_atoi(((t_binary_token *)(ast->right->content))->right);
-//				else if (((char *)ast->content)[1] == '>' && !((char *)ast->content)[2])
-//					newfd = open(((t_binary_token *)(ast->right->content))->right, O_WRONLY | O_CREAT | O_APPEND, 0644);
-//			}
-//			if (((char *)ast->content)[0] == '<')
-//			{
-//				if (!((char *)ast->content)[1])
-//					newfd = open(((t_binary_token *)(ast->right->content))->right, O_RDONLY, 0644);
-//				else if (((char *)ast->content)[1] == '&' && !((char *)ast->content)[2])
-//					newfd = ft_atoi(((t_binary_token *)(ast->right->content))->right);
-//			}
-//			if (newfd == -1)
-//			{
-//				ft_fprintf(2, "sh: %s: No such file or directory\n", ((t_binary_token *)(ast->right->content))->right);
-//				return (0);
-//			}
-//			if (((char *)ast->content)[1] != '&')
-//			{
-//				oldfd[0] = dup(fd);
-//				dup2(newfd, fd);
-//				close(newfd);
-//				parse_ast(ast->left, env, ispipe, initfd, 1);
-//				dup2(oldfd[0], fd);
-//				close(oldfd[0]);
-//			}
-//			else
-//			{
-//				oldfd[0] = dup(fd);
-//				if (ft_strequ(((t_binary_token *)(ast->right->content))->right, "-"))
-//					close(fd);
-//				else
-//					dup2(newfd, fd);
-//				parse_ast(ast->left, env, ispipe, initfd, 1);
-//				dup2(oldfd[0], fd);
-//				close(oldfd[0]);
-//			}
-//		}
-//		wait(0);
-//	}
+	else if (ast->type == REDIRECTION &&
+			!parse_ast_redirection(ast, shell, needfork))
+		return (0);
 	else if (ast->type == COMMAND &&
-			!parse_ast_command(ast, env, initfd, ispipe))
+			!parse_ast_command(ast, shell, needfork))
 		return (0);
 	return (1);
 }
 
-void				preparation(t_initfd *initfd, char ***env)
+void				preparation(t_shell *shell)
 {
 	term_associate();
-	initfd->fdin = dup(0);
-	initfd->fdout = dup(1);
-	*env = fill_env();
+	shell->initfd.fdin = dup(0);
+	shell->initfd.fdout = dup(1);
+	shell->env = fill_env();
 	//signal(SIGINT, int_handler);
 }
 
 int					main(void)
 {
-	char		**env;
 	char		*command;
 	t_lexer		lexer;
 	t_ast		*ast;
-	t_initfd	initfd;
+	t_shell		shell;
 
-	preparation(&initfd, &env);
+	preparation(&shell);
 	while (1)
 	{
-		change_termios(&initfd, 0);
+		change_termios(&shell.initfd, 0);
 		ft_bzero(&lexer, sizeof(t_lexer));
 		ft_printf("$> ");
 		if (!(command = input_command()))
@@ -718,12 +756,13 @@ int					main(void)
 		}
 		ast = create_separator_ast(&lexer, 0, lexer.tokens.len - 1, 0);
 		print_ast(ast);
-		change_termios(&initfd, 1);
-		parse_ast(ast, &env, &initfd, 0);
+		change_termios(&shell.initfd, 1);
+		parse_ast(ast, &shell, 1);
 		free_lexer(&lexer);
 		free_ast(ast);
 		system("leaks -quiet 21sh");
 	}
-	free_double_arr(env);
+	free_double_arr(shell.env);
+	//TODO: close shell->initfd
 	return (0);
 }
