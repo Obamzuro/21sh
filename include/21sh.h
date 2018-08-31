@@ -6,7 +6,7 @@
 /*   By: obamzuro <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/07/04 11:35:30 by obamzuro          #+#    #+#             */
-/*   Updated: 2018/08/30 17:02:32 by obamzuro         ###   ########.fr       */
+/*   Updated: 2018/08/31 22:03:43 by obamzuro         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,6 +17,19 @@
 # define AM_LEVELS 2
 # define AM_SEPARATOROP 2
 # define AM_IOFILEOP 7
+
+# define ESC "\x1B"
+# define DOWN "\x1B[B"
+# define UP "\x1B[A"
+# define LEFT "\x1B[D"
+# define RIGHT "\x1B[C"
+# define SPACE " "
+# define SUSPEND "\x1A"
+# define DEL "\x1B[3~"
+# define DEFAULT "\x1B[0m"
+# define BACKSPACE "\x7F"
+# define ENTER "\x0A"
+
 # include <unistd.h>
 # include <signal.h>
 # include <term.h>

@@ -6,7 +6,7 @@
 /*   By: obamzuro <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/05/13 15:05:22 by obamzuro          #+#    #+#             */
-/*   Updated: 2018/08/30 17:33:27 by obamzuro         ###   ########.fr       */
+/*   Updated: 2018/08/31 22:10:30 by obamzuro         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -43,6 +43,8 @@ int					free_ast(t_ast *ast)
 {
 	if (!ast)
 		return (1);
+	if (ast->type == REDIRECTION && ft_strequ((char *)ast->content, "<<"))
+		free(((t_binary_token *)(ast->right->content))->right);
 	free_ast(ast->left);
 	free_ast(ast->right);
 	free(ast->content);
@@ -50,26 +52,37 @@ int					free_ast(t_ast *ast)
 	return (1);
 }
 
+void				line_editing(char letter[8], char *buffer)
+{
+	if (!ft_strcmp(letter, LEFT))
+	{
+		tgoto(tgetstr("cm", 0);
+	}
+	return (0);
+}
+
 char				*input_command(void)
 {
-	char		buf[8];
+	char		letter[8];
 	char		*command;
 	char		*temp;
 
 	command = 0;
 	while (1)
 	{
-		ft_bzero(buf, sizeof(buf));
-		read(0, buf, sizeof(buf));
-		if (!buf[1] && buf[0] == '\n')
+		ft_bzero(letter, sizeof(letter));
+		read(0, letter, sizeof(letter));
+		if (line_editing(letter, command))
+			continue ;
+		if (!letter[1] && letter[0] == '\n')
 		{
-			write(1, buf, sizeof(buf));
+			write(1, letter, sizeof(letter));
 			break ;
 		}
 		temp = command;
-		command = ft_strjoin(command, buf);
+		command = ft_strjoin(command, letter);
 		free(temp);
-		write(1, buf, sizeof(buf));
+		write(1, letter, sizeof(letter));
 	}
 	return (command);
 }
@@ -407,6 +420,33 @@ t_ast				*create_command(t_lexer *lexer, int beg, int end)
 	return (ast);
 }
 
+void				create_redirection_ast_content_heredoc(t_ast *ast)
+{
+	char	*line;
+	char	*end;
+	char	*str;
+	char	*temp;
+
+	end = ((t_binary_token *)ast->right->content)->right;
+	str = 0;
+	ft_printf("> ");
+	while ((line = input_command()))
+	{
+		if (ft_strequ(line, end))
+			break ;
+		ft_printf("> ");
+		temp = str;
+		str = ft_strjoin(str, line);
+		free(temp);
+		free(line);
+	}
+	free(line);
+	temp = str;
+	str = ft_chrjoin(str, '\n');
+	free(temp);
+	((t_binary_token *)(ast->right->content))->right = str;
+}
+
 t_ast				*create_redirection_ast_content(t_lexer *lexer, int pos)
 {
 	t_ast	*ast;
@@ -419,6 +459,8 @@ t_ast				*create_redirection_ast_content(t_lexer *lexer, int pos)
 //	ast->right->type = USED;
 	ast->right->content = (t_binary_token *)ft_memalloc(sizeof(t_binary_token));
 	((t_binary_token *)ast->right->content)->right = ((t_token *)lexer->tokens.elem[pos + 1])->str;
+	if (ft_strequ(ast->content, "<<"))
+		create_redirection_ast_content_heredoc(ast);
 	((t_token *)lexer->tokens.elem[pos + 1])->type = USED;
 	return (ast);
 }
@@ -581,11 +623,17 @@ int						parse_ast_command(t_ast *ast, t_shell *shell,
 		if (needfork)
 		{
 			if (ft_exec(args, &shell->env, 1) == -1)
+			{
+				free_double_arr(args);
 				return (0);
+			}
 			wait(0);
 		}
 		else if (ft_exec(args, &shell->env, 0) == -1)
+		{
+			free_double_arr(args);
 			return (0);
+		}
 	}
 	free_double_arr(args);
 	return (1);
@@ -624,7 +672,10 @@ int						parse_ast_redirection_kernel_heredoc(t_ast *ast, t_shell *shell, int fd
 		ft_fprintf(2, "21sh: pipe creating error");
 		return (0);
 	}
-	dup2(pipefd[1], 0);
+	dup2(pipefd[0], fd);
+	close(pipefd[0]);
+	write(pipefd[1], ((t_binary_token *)(ast->right->content))->right,
+		ft_strlen(((t_binary_token *)(ast->right->content))->right));
 	close(pipefd[1]);
 	return (1);
 }
@@ -675,28 +726,28 @@ int						parse_ast_redirection_child(t_ast *ast, t_shell *shell)
 int						parse_ast_redirection(t_ast *ast, t_shell *shell,
 		int needfork)
 {
-//	pid_t		pid;
-//
-//	if (needfork)
-//	{
-//		pid = fork();
-//		if (pid < 0)
-//		{
-//			ft_fprintf(2, "21sh: fork error\n");
-//			return (0);
-//		}
-//		if (!pid)
-//		{
-//			if (!parse_ast_redirection_child(ast, shell))
-//				exit(1);
-//		}
-//		else if (needfork)
-//			wait(0);
-//		return (1);
-//	}
-//	if (!parse_ast_redirection_child(ast, shell))
-//		return (0);
-//	return (1);
+	pid_t		pid;
+
+	if (needfork)
+	{
+		pid = fork();
+		if (pid < 0)
+		{
+			ft_fprintf(2, "21sh: fork error\n");
+			return (0);
+		}
+		if (!pid)
+		{
+			if (!parse_ast_redirection_child(ast, shell))
+				exit(1);
+		}
+		else if (needfork)
+			wait(0);
+		return (1);
+	}
+	if (!parse_ast_redirection_child(ast, shell))
+		return (0);
+	return (1);
 }
 
 int						parse_ast(t_ast *ast, t_shell *shell, int needfork)
@@ -739,6 +790,8 @@ int					main(void)
 	t_lexer		lexer;
 	t_ast		*ast;
 	t_shell		shell;
+
+	char	buf[8];
 
 	preparation(&shell);
 	while (1)
