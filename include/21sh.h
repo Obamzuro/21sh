@@ -6,12 +6,23 @@
 /*   By: obamzuro <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/07/04 11:35:30 by obamzuro          #+#    #+#             */
-/*   Updated: 2018/08/31 22:03:43 by obamzuro         ###   ########.fr       */
+/*   Updated: 2018/09/01 20:29:07 by obamzuro         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #ifndef __21SH_H
 # define __21SH_H
+
+# include <curses.h>
+# include <term.h>
+# include <termcap.h>
+# include <unistd.h>
+# include <signal.h>
+# include <sys/stat.h>
+# include <sys/types.h>
+# include "libft.h"
+# include "ft_printf.h"
+
 # define AM_COMMANDS 7
 # define AM_OPERATORS 8
 # define AM_LEVELS 2
@@ -30,13 +41,6 @@
 # define BACKSPACE "\x7F"
 # define ENTER "\x0A"
 
-# include <unistd.h>
-# include <signal.h>
-# include <term.h>
-# include <sys/stat.h>
-# include <sys/types.h>
-# include "libft.h"
-# include "ft_printf.h"
 
 typedef enum			e_tokentype
 {

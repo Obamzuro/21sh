@@ -6,7 +6,7 @@
 /*   By: obamzuro <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/05/13 15:05:22 by obamzuro          #+#    #+#             */
-/*   Updated: 2018/08/31 22:10:30 by obamzuro         ###   ########.fr       */
+/*   Updated: 2018/09/01 23:29:21 by obamzuro         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -52,11 +52,102 @@ int					free_ast(t_ast *ast)
 	return (1);
 }
 
-void				line_editing(char letter[8], char *buffer)
+static void	get_cursor_position2(int cursorpos[2])
 {
-	if (!ft_strcmp(letter, LEFT))
+	char	temp;
+
+	read(2, &temp, 1);
+	while (temp >= '0' && temp <= '9')
 	{
-		tgoto(tgetstr("cm", 0);
+		cursorpos[1] = cursorpos[1] * 10 + (temp - '0');
+		read(2, &temp, 1);
+	}
+	if (temp != 'R')
+		return ;
+}
+
+static void	get_cursor_position(int cursorpos[2])
+{
+	char	temp;
+
+	cursorpos[0] = 0;
+	cursorpos[1] = 0;
+	write(2, "\x1B[6n", 4);
+	read(2, &temp, 1);
+	if (temp != '\x1b')
+		return ;
+	read(2, &temp, 1);
+	if (temp != '[')
+		return ;
+	read(2, &temp, 1);
+	while (temp >= '0' && temp <= '9')
+	{
+		cursorpos[0] = cursorpos[0] * 10 + (temp - '0');
+		read(2, &temp, 1);
+	}
+	if (temp != ';')
+		return ;
+	get_cursor_position2(cursorpos);
+}
+
+void				input_command_back(char *buffer, int seek)
+{
+	int		i;
+	int		offset;
+
+	i = 0;
+	offset = ft_strlen(buffer) - seek;
+	while (i < offset)
+	{
+		ft_printf(tgetstr("le", 0));
+		++i;
+	}
+}
+
+int					line_editing(char letter[8], char **buffer,
+		int *seek, int cursorpos[2])
+{
+	char	*command;
+	char	*temp;
+	int		i;
+
+	if (ft_strequ(letter, LEFT))
+	{
+		if (*seek)
+		{
+			command = tgetstr("le", 0);
+			if (command)
+				ft_printf(command);
+			--(*seek);
+		}
+		return (1);
+	}
+	else if (ft_strequ(letter, RIGHT))
+	{
+		if (*seek != ft_strlen(*buffer))
+		{
+			command = tgetstr("nd", 0);
+			if (command)
+				ft_printf(command);
+			++(*seek);
+		}
+		return (1);
+	}
+	else if (ft_strequ(letter, BACKSPACE))
+	{
+		if (*seek)
+		{
+			ft_putstr(tgoto(tgetstr("cm", 0), cursorpos[1] - 1, cursorpos[0] - 1));
+			ft_putstr(tgetstr("ce", 0));
+			(*buffer)[*seek - 1] = 0;
+			temp = *buffer;
+			*buffer = ft_strjoin(*buffer, *buffer + *seek);
+			ft_putstr(*buffer);
+			free(temp);
+			input_command_back(*buffer, *seek - 1);
+			--(*seek);
+		}
+		return (1);
 	}
 	return (0);
 }
@@ -64,27 +155,39 @@ void				line_editing(char letter[8], char *buffer)
 char				*input_command(void)
 {
 	char		letter[8];
-	char		*command;
+	char		*buffer;
 	char		*temp;
+	int			cursorpos[2];
+	int			seek;
 
-	command = 0;
+	buffer = 0;
+	seek = 0;
+	get_cursor_position(cursorpos);
 	while (1)
 	{
 		ft_bzero(letter, sizeof(letter));
 		read(0, letter, sizeof(letter));
-		if (line_editing(letter, command))
+		if (line_editing(letter, &buffer, &seek, cursorpos))
 			continue ;
 		if (!letter[1] && letter[0] == '\n')
 		{
 			write(1, letter, sizeof(letter));
 			break ;
 		}
-		temp = command;
-		command = ft_strjoin(command, letter);
-		free(temp);
+		temp = buffer;
 		write(1, letter, sizeof(letter));
+		if (seek != ft_strlen(buffer))
+		{
+			write(1, buffer + seek, ft_strlen(buffer) - seek);
+			input_command_back(buffer, seek);
+			buffer = ft_strjoin_inner(buffer, letter, seek);
+		}
+		else
+			buffer = ft_strjoin(buffer, letter);
+		free(temp);
+		++seek;
 	}
-	return (command);
+	return (buffer);
 }
 
 int					lexing_try_append_operator(char buf, char **tokenstr)
@@ -778,8 +881,8 @@ int						parse_ast(t_ast *ast, t_shell *shell, int needfork)
 void				preparation(t_shell *shell)
 {
 	term_associate();
-	shell->initfd.fdin = dup(0);
-	shell->initfd.fdout = dup(1);
+//	shell->initfd.fdin = dup(0);
+//	shell->initfd.fdout = dup(1);
 	shell->env = fill_env();
 	//signal(SIGINT, int_handler);
 }
