@@ -6,7 +6,7 @@
 /*   By: obamzuro <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/05/13 15:05:22 by obamzuro          #+#    #+#             */
-/*   Updated: 2018/09/02 22:12:30 by obamzuro         ###   ########.fr       */
+/*   Updated: 2018/09/03 02:17:13 by obamzuro         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -52,7 +52,7 @@ void				history_append(char *command, t_history *history)
 		temp = history->commands[history->last];
 		history->commands[history->last] = ft_strjoin(history->commands[history->last], command);
 		free(temp);
-		free(command);
+//		free(command);
 	}
 }
 
@@ -121,6 +121,74 @@ void				input_command_back(char *buffer, int seek)
 	}
 }
 
+void				line_editing_altup(t_lineeditor *lineeditor)
+{
+	struct winsize	ws;
+	int				i;
+
+	if (ioctl(0, TIOCGWINSZ, &ws) == -1)
+		return ;
+	i = 0;
+	while (lineeditor->seek && i < ws.ws_col)
+	{
+		ft_printf(tgetstr("le", 0));
+		--(lineeditor->seek);
+		if (lineeditor->buffer[lineeditor->seek] == '\n')
+			break ;
+		++i;
+	}
+}
+
+void				line_editing_altdown(t_lineeditor *lineeditor)
+{
+	struct winsize	ws;
+	int				i;
+	int				j;
+	int				buflen;
+	int				curpos[2];
+
+	ft_bzero(curpos, 2);
+	buflen = ft_strlen(lineeditor->buffer);
+	if (ioctl(0, TIOCGWINSZ, &ws) == -1)
+		return ;
+	i = 0;
+	while (lineeditor->seek != buflen && i < ws.ws_col)
+	{
+		get_cursor_position(curpos);
+		j = -1;
+		if (ws.ws_col == curpos[1])
+			ft_putstr(tgoto(tgetstr("cm", 0), 0, curpos[0]));
+		else
+			ft_printf(tgetstr("nd", 0));
+		++(lineeditor->seek);
+//		if (lineeditor->buffer[lineeditor->seek] == '\n')
+//			break ;
+		++i;
+	}
+}
+
+void				line_editing_right(t_lineeditor *lineeditor)
+{
+	struct winsize	ws;
+	int				i;
+	int				buflen;
+	int				curpos[2];
+
+	get_cursor_position(curpos);
+	buflen = ft_strlen(lineeditor->buffer);
+	if (ioctl(0, TIOCGWINSZ, &ws) == -1)
+		return ;
+	i = -1;
+	if (lineeditor->seek != buflen)
+	{
+		if (ws.ws_col == curpos[1])
+			ft_putstr(tgoto(tgetstr("cm", 0), 0, curpos[0]));
+		else
+			ft_printf(tgetstr("nd", 0));
+		++(lineeditor->seek);
+	}
+}
+
 int					line_editing(t_lineeditor *lineeditor, t_history *history)
 {
 	char	*temp;
@@ -139,19 +207,17 @@ int					line_editing(t_lineeditor *lineeditor, t_history *history)
 	}
 	else if (ft_strequ(lineeditor->letter, RIGHT))
 	{
-		if (lineeditor->seek != ft_strlen(lineeditor->buffer))
-		{
-			ft_printf(tgetstr("nd", 0));
-			++(lineeditor->seek);
-		}
+		line_editing_right(lineeditor);
 		return (1);
 	}
 	else if (ft_strequ(lineeditor->letter, BACKSPACE))
 	{
 		if (lineeditor->seek)
 		{
-			ft_putstr(tgoto(tgetstr("cm", 0), lineeditor->cursorpos[1] - 1, lineeditor->cursorpos[0] - 1));
-			ft_putstr(tgetstr("ce", 0));
+			//ft_putstr(tgoto(tgetstr("cm", 0), lineeditor->cursorpos[1] - 1, lineeditor->cursorpos[0] - 1));
+			input_command_back(0, - lineeditor->seek - 3);
+			write(1, "$> ", 3);
+			ft_putstr(tgetstr("cd", 0));
 			(lineeditor->buffer)[lineeditor->seek - 1] = 0;
 			temp = lineeditor->buffer;
 			lineeditor->buffer = ft_strjoin(lineeditor->buffer, lineeditor->buffer + lineeditor->seek);
@@ -220,7 +286,9 @@ int					line_editing(t_lineeditor *lineeditor, t_history *history)
 	{
 		if (history->current)
 		{
-			ft_putstr(tgoto(tgetstr("cm", 0), lineeditor->cursorpos[1] - 1, lineeditor->cursorpos[0] - 1));
+		//	ft_putstr(tgoto(tgetstr("cm", 0), lineeditor->cursorpos[1] - 1, lineeditor->cursorpos[0] - 1));
+			input_command_back(0, - lineeditor->seek - 3);
+			write(1, "$> ", 3);
 			ft_putstr(tgetstr("cd", 0));
 			if (!lineeditor->is_history_searched && history->current == history->last)
 			{
@@ -240,7 +308,9 @@ int					line_editing(t_lineeditor *lineeditor, t_history *history)
 	{
 		if (history->current < history->last - 1)
 		{
-			ft_putstr(tgoto(tgetstr("cm", 0), lineeditor->cursorpos[1] - 1, lineeditor->cursorpos[0] - 1));
+		//	ft_putstr(tgoto(tgetstr("cm", 0), lineeditor->cursorpos[1] - 1, lineeditor->cursorpos[0] - 1));
+			input_command_back(0, - lineeditor->seek - 3);
+			write(1, "$> ", 3);
 			ft_putstr(tgetstr("cd", 0));
 			++history->current;
 			free(lineeditor->buffer);
@@ -258,6 +328,16 @@ int					line_editing(t_lineeditor *lineeditor, t_history *history)
 			ft_printf("%s\n", history->commands[i]);
 			++i;
 		}
+		return (1);
+	}
+	else if (ft_strequ(lineeditor->letter, ALTUP))
+	{
+		line_editing_altup(lineeditor);
+		return (1);
+	}
+	else if (ft_strequ(lineeditor->letter, ALTDOWN))
+	{
+		line_editing_altdown(lineeditor);
 		return (1);
 	}
 	return (0);
@@ -290,15 +370,20 @@ char				*input_command(t_history *history)
 			break ;
 		}
 		temp = lineeditor.buffer;
-		write(1, lineeditor.letter, sizeof(lineeditor.letter));
+//		write(1, lineeditor.letter, sizeof(lineeditor.letter));
 		if (lineeditor.seek != ft_strlen(lineeditor.buffer))
 		{
-			write(1, lineeditor.buffer + lineeditor.seek, ft_strlen(lineeditor.buffer) - lineeditor.seek);
-			input_command_back(lineeditor.buffer, lineeditor.seek);
+//			write(1, lineeditor.buffer + lineeditor.seek, ft_strlen(lineeditor.buffer) - lineeditor.seek);
+//			input_command_back(lineeditor.buffer, lineeditor.seek);
 			lineeditor.buffer = ft_strjoin_inner(lineeditor.buffer, lineeditor.letter, lineeditor.seek);
 		}
 		else
 			lineeditor.buffer = ft_strjoin(lineeditor.buffer, lineeditor.letter);
+//		ft_putstr(tgoto(tgetstr("cm", 0), lineeditor.cursorpos[1] - 1, lineeditor.cursorpos[0] - 1));
+		input_command_back(0, - lineeditor.seek - 3);
+		write(1, "$> ", 3);
+		write(1, lineeditor.buffer, ft_strlen(lineeditor.buffer));
+		input_command_back(lineeditor.buffer, lineeditor.seek + 1);
 		free(temp);
 		++lineeditor.seek;
 	}
@@ -391,7 +476,8 @@ t_token				*lexing_handling_quotes(t_lexer *lexer, t_token *token, char **last,
 			free(token->str);
 			token->str = temp;
 			history_append(*command, &shell->history);
-//			free(*command);
+			history_append("\n", &shell->history);
+			free(*command);
 			*command = input_command(&shell->history);
 			*last = *command - 1;
 			continue ;
@@ -916,7 +1002,8 @@ int						parse_ast_redirection_kernel(t_ast *ast, t_shell *shell,
 	else
 	{
 		dup2(rightfd, fd);
-		close(rightfd);
+	//TODO: is need close?
+//		close(rightfd);
 	}
 	if (!parse_ast(ast->left, shell, 0))
 		return (0);
@@ -1043,7 +1130,7 @@ int					main(void)
 		parse_ast(ast, &shell, 1);
 		free_lexer(&lexer);
 		free_ast(ast);
-//		system("leaks -quiet 21sh");
+		system("leaks -quiet 21sh");
 	}
 	free_double_arr(shell.env);
 	//TODO: close shell->initfd

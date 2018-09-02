@@ -6,7 +6,7 @@
 /*   By: obamzuro <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/07/04 11:35:30 by obamzuro          #+#    #+#             */
-/*   Updated: 2018/09/02 18:02:28 by obamzuro         ###   ########.fr       */
+/*   Updated: 2018/09/03 01:26:11 by obamzuro         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,6 +20,7 @@
 # include <signal.h>
 # include <sys/stat.h>
 # include <sys/types.h>
+# include <sys/ioctl.h>
 # include "libft.h"
 # include "ft_printf.h"
 
@@ -43,6 +44,8 @@
 # define ENTER "\x0A"
 # define ALTLEFT "\x1b\x1b\x5b\x44"
 # define ALTRIGHT "\x1b\x1b\x5b\x43"
+# define ALTUP "\x1b\x1b\x5b\x41"
+# define ALTDOWN "\x1b\x1b\x5b\x42"
 # define HOME "\x1b\x5b\x48"
 # define END "\x1b\x5b\x46"
 
