@@ -6,7 +6,7 @@
 /*   By: obamzuro <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/05/13 15:05:22 by obamzuro          #+#    #+#             */
-/*   Updated: 2018/09/03 02:17:13 by obamzuro         ###   ########.fr       */
+/*   Updated: 2018/09/03 02:45:53 by obamzuro         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -148,19 +148,24 @@ void				line_editing_altdown(t_lineeditor *lineeditor)
 	int				curpos[2];
 
 	ft_bzero(curpos, 2);
+	get_cursor_position(curpos);
 	buflen = ft_strlen(lineeditor->buffer);
 	if (ioctl(0, TIOCGWINSZ, &ws) == -1)
 		return ;
 	i = 0;
 	while (lineeditor->seek != buflen && i < ws.ws_col)
 	{
-		get_cursor_position(curpos);
 		j = -1;
 		if (ws.ws_col == curpos[1])
+		{
+			++curpos[0];
+			curpos[1] = -1;
 			ft_putstr(tgoto(tgetstr("cm", 0), 0, curpos[0]));
+		}
 		else
 			ft_printf(tgetstr("nd", 0));
 		++(lineeditor->seek);
+		++curpos[1];
 //		if (lineeditor->buffer[lineeditor->seek] == '\n')
 //			break ;
 		++i;
@@ -253,6 +258,7 @@ int					line_editing(t_lineeditor *lineeditor, t_history *history)
 		{
 			while (lineeditor->seek != buflen && (lineeditor->buffer)[lineeditor->seek] == ' ')
 			{
+				//TODO: FIX MULTILINE
 				ft_printf(tgetstr("nd", 0));
 				++(lineeditor->seek);
 			}
@@ -276,10 +282,7 @@ int					line_editing(t_lineeditor *lineeditor, t_history *history)
 	else if (ft_strequ(lineeditor->letter, END))
 	{
 		while (lineeditor->seek != buflen)
-		{
-			++(lineeditor->seek);
-			ft_printf(tgetstr("nd", 0));
-		}
+			line_editing_altdown(lineeditor);
 		return (1);
 	}
 	else if (ft_strequ(lineeditor->letter, UP))
