@@ -6,7 +6,7 @@
 /*   By: obamzuro <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/07/04 11:35:30 by obamzuro          #+#    #+#             */
-/*   Updated: 2018/09/02 14:20:32 by obamzuro         ###   ########.fr       */
+/*   Updated: 2018/09/02 18:02:28 by obamzuro         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -28,6 +28,7 @@
 # define AM_LEVELS 2
 # define AM_SEPARATOROP 2
 # define AM_IOFILEOP 7
+# define AM_HISTORY 20
 
 # define ESC "\x1B"
 # define DOWN "\x1B[B"
@@ -58,6 +59,22 @@ typedef enum			e_tokentype
 	USED
 }						t_tokentype;
 
+typedef struct			s_history
+{
+	char	*commands[AM_HISTORY];
+	int		last;
+	int		current;
+}						t_history;
+
+typedef struct			s_lineeditor
+{
+	char	letter[8];
+	int		cursorpos[2];
+	int		seek;
+	char	*buffer;
+	int		is_history_searched;
+}						t_lineeditor;
+
 typedef struct			s_initfd
 {
 	int		fdin;
@@ -68,6 +85,7 @@ typedef struct			s_shell
 {
 	char		**env;
 	t_initfd	initfd;
+	t_history	history;
 }						t_shell;
 
 typedef struct			s_border

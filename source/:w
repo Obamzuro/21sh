@@ -6,7 +6,7 @@
 /*   By: obamzuro <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/05/13 15:05:22 by obamzuro          #+#    #+#             */
-/*   Updated: 2018/09/02 22:12:30 by obamzuro         ###   ########.fr       */
+/*   Updated: 2018/09/02 17:19:57 by obamzuro         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -43,8 +43,6 @@ void				history_append(char *command, t_history *history)
 {
 	char	*temp;
 
-	if (!command)
-		return ;
 	if (!history->commands[history->last])
 		history->commands[history->last] = command;
 	else
@@ -121,188 +119,146 @@ void				input_command_back(char *buffer, int seek)
 	}
 }
 
-int					line_editing(t_lineeditor *lineeditor, t_history *history)
+int					line_editing(char letter[8], char **buffer,
+		int *seek, int cursorpos[2])
 {
 	char	*temp;
 	int		i;
 	int		buflen;
 
-	buflen = ft_strlen(lineeditor->buffer);
-	if (ft_strequ(lineeditor->letter, LEFT))
+	buflen = ft_strlen(*buffer);
+	if (ft_strequ(letter, LEFT))
 	{
-		if (lineeditor->seek)
+		if (*seek)
 		{
 			ft_printf(tgetstr("le", 0));
-			--(lineeditor->seek);
+			--(*seek);
 		}
 		return (1);
 	}
-	else if (ft_strequ(lineeditor->letter, RIGHT))
+	else if (ft_strequ(letter, RIGHT))
 	{
-		if (lineeditor->seek != ft_strlen(lineeditor->buffer))
+		if (*seek != ft_strlen(*buffer))
 		{
 			ft_printf(tgetstr("nd", 0));
-			++(lineeditor->seek);
+			++(*seek);
 		}
 		return (1);
 	}
-	else if (ft_strequ(lineeditor->letter, BACKSPACE))
+	else if (ft_strequ(letter, BACKSPACE))
 	{
-		if (lineeditor->seek)
+		if (*seek)
 		{
-			ft_putstr(tgoto(tgetstr("cm", 0), lineeditor->cursorpos[1] - 1, lineeditor->cursorpos[0] - 1));
+			ft_putstr(tgoto(tgetstr("cm", 0), cursorpos[1] - 1, cursorpos[0] - 1));
 			ft_putstr(tgetstr("ce", 0));
-			(lineeditor->buffer)[lineeditor->seek - 1] = 0;
-			temp = lineeditor->buffer;
-			lineeditor->buffer = ft_strjoin(lineeditor->buffer, lineeditor->buffer + lineeditor->seek);
-			ft_putstr(lineeditor->buffer);
+			(*buffer)[*seek - 1] = 0;
+			temp = *buffer;
+			*buffer = ft_strjoin(*buffer, *buffer + *seek);
+			ft_putstr(*buffer);
 			free(temp);
-			input_command_back(lineeditor->buffer, lineeditor->seek - 1);
-			--(lineeditor->seek);
+			input_command_back(*buffer, *seek - 1);
+			--(*seek);
 		}
 		return (1);
 	}
-	else if (ft_strequ(lineeditor->letter, ALTLEFT))
+	else if (ft_strequ(letter, ALTLEFT))
 	{
-		if (lineeditor->seek)
+		if (*seek)
 		{
-			--(lineeditor->seek);
+			--(*seek);
 			ft_printf(tgetstr("le", 0));
-			while (lineeditor->seek > 0 && (lineeditor->buffer)[lineeditor->seek] == ' ')
+			while (*seek > 0 && (*buffer)[*seek] == ' ')
 			{
 				ft_printf(tgetstr("le", 0));
-				--(lineeditor->seek);
+				--(*seek);
 			}
-			while (lineeditor->seek > 0 && (lineeditor->buffer)[lineeditor->seek - 1] != ' ')
+			while (*seek > 0 && (*buffer)[*seek - 1] != ' ')
 			{
 				ft_printf(tgetstr("le", 0));
-				--(lineeditor->seek);
+				--(*seek);
 			}
 		}
 		return (1);
 	}
-	else if (ft_strequ(lineeditor->letter, ALTRIGHT))
+	else if (ft_strequ(letter, ALTRIGHT))
 	{
-		if (lineeditor->seek != buflen)
+		if (*seek != buflen)
 		{
-			while (lineeditor->seek != buflen && (lineeditor->buffer)[lineeditor->seek] == ' ')
+			while (*seek != buflen && (*buffer)[*seek] == ' ')
 			{
 				ft_printf(tgetstr("nd", 0));
-				++(lineeditor->seek);
+				++(*seek);
 			}
-			while (lineeditor->seek != buflen && (lineeditor->buffer)[lineeditor->seek] != ' ')
+			while (*seek != buflen && (*buffer)[*seek] != ' ')
 			{
 				ft_printf(tgetstr("nd", 0));
-				++(lineeditor->seek);
+				++(*seek);
 			}
 		}
 		return (1);
 	}
-	else if (ft_strequ(lineeditor->letter, HOME))
+	else if (ft_strequ(letter, HOME))
 	{
-		while (lineeditor->seek)
+		while (*seek)
 		{
-			--(lineeditor->seek);
+			--(*seek);
 			ft_printf(tgetstr("le", 0));
 		}
 		return (1);
 	}
-	else if (ft_strequ(lineeditor->letter, END))
+	else if (ft_strequ(letter, END))
 	{
-		while (lineeditor->seek != buflen)
+		while (*seek != buflen)
 		{
-			++(lineeditor->seek);
+			++(*seek);
 			ft_printf(tgetstr("nd", 0));
 		}
 		return (1);
 	}
-	else if (ft_strequ(lineeditor->letter, UP))
+	else if (ft_strequ(letter, UP))
 	{
-		if (history->current)
-		{
-			ft_putstr(tgoto(tgetstr("cm", 0), lineeditor->cursorpos[1] - 1, lineeditor->cursorpos[0] - 1));
-			ft_putstr(tgetstr("cd", 0));
-			if (!lineeditor->is_history_searched && history->current == history->last)
-			{
-				history_append(ft_strdup(lineeditor->buffer), history);
-				++history->last;
-			}
-			--history->current;
-			free(lineeditor->buffer);
-			lineeditor->buffer = ft_strdup(history->commands[history->current]);
-			write(1, lineeditor->buffer, ft_strlen(lineeditor->buffer));
-			lineeditor->seek = ft_strlen(lineeditor->buffer);
-			lineeditor->is_history_searched = 1;
-		}
-		return (1);
-	}
-	else if (ft_strequ(lineeditor->letter, DOWN))
-	{
-		if (history->current < history->last - 1)
-		{
-			ft_putstr(tgoto(tgetstr("cm", 0), lineeditor->cursorpos[1] - 1, lineeditor->cursorpos[0] - 1));
-			ft_putstr(tgetstr("cd", 0));
-			++history->current;
-			free(lineeditor->buffer);
-			lineeditor->buffer = ft_strdup(history->commands[history->current]);
-			write(1, lineeditor->buffer, ft_strlen(lineeditor->buffer));
-			lineeditor->seek = ft_strlen(lineeditor->buffer);
-		}
-		return (1);
-	}
-	else if (ft_strequ(lineeditor->letter, ESC))
-	{
-		int i = 0;
-		while (i < 10)
-		{
-			ft_printf("%s\n", history->commands[i]);
-			++i;
-		}
-		return (1);
+		ft_putstr(tgoto(tgetstr("cm", 0), cursorpos[1] - 1, cursorpos[0] - 1));
+		ft_putstr(tgetstr("cd", 0));
 	}
 	return (0);
 }
 
-char				*input_command(t_history *history)
+char				*input_command(void)
 {
-	t_lineeditor	lineeditor;
-	char			*temp;
+	char		letter[8];
+	char		*buffer;
+	char		*temp;
+	int			cursorpos[2];
+	int			seek;
 
-	ft_bzero(&lineeditor, sizeof(lineeditor));
-	get_cursor_position(lineeditor.cursorpos);
+	buffer = 0;
+	seek = 0;
+	get_cursor_position(cursorpos);
 	while (1)
 	{
-		ft_bzero(lineeditor.letter, sizeof(lineeditor.letter));
-		read(0, lineeditor.letter, sizeof(lineeditor.letter));
-		if (line_editing(&lineeditor, history))
+		ft_bzero(letter, sizeof(letter));
+		read(0, letter, sizeof(letter));
+		if (line_editing(letter, &buffer, &seek, cursorpos))
 			continue ;
-		if (lineeditor.is_history_searched)
+		if (!letter[1] && letter[0] == '\n')
 		{
-			--history->last;
-			free(history->commands[history->last]);
-			history->commands[history->last] = 0;
-			lineeditor.is_history_searched = 0;
-			history->current = history->last;
-		}
-		if (!lineeditor.letter[1] && lineeditor.letter[0] == '\n')
-		{
-			write(1, lineeditor.letter, sizeof(lineeditor.letter));
+			write(1, letter, sizeof(letter));
 			break ;
 		}
-		temp = lineeditor.buffer;
-		write(1, lineeditor.letter, sizeof(lineeditor.letter));
-		if (lineeditor.seek != ft_strlen(lineeditor.buffer))
+		temp = buffer;
+		write(1, letter, sizeof(letter));
+		if (seek != ft_strlen(buffer))
 		{
-			write(1, lineeditor.buffer + lineeditor.seek, ft_strlen(lineeditor.buffer) - lineeditor.seek);
-			input_command_back(lineeditor.buffer, lineeditor.seek);
-			lineeditor.buffer = ft_strjoin_inner(lineeditor.buffer, lineeditor.letter, lineeditor.seek);
+			write(1, buffer + seek, ft_strlen(buffer) - seek);
+			input_command_back(buffer, seek);
+			buffer = ft_strjoin_inner(buffer, letter, seek);
 		}
 		else
-			lineeditor.buffer = ft_strjoin(lineeditor.buffer, lineeditor.letter);
+			buffer = ft_strjoin(buffer, letter);
 		free(temp);
-		++lineeditor.seek;
+		++seek;
 	}
-	return (lineeditor.buffer);
+	return (buffer);
 }
 
 int					lexing_try_append_operator(char buf, char **tokenstr)
@@ -392,7 +348,7 @@ t_token				*lexing_handling_quotes(t_lexer *lexer, t_token *token, char **last,
 			token->str = temp;
 			history_append(*command, &shell->history);
 //			free(*command);
-			*command = input_command(&shell->history);
+			*command = input_command();
 			*last = *command - 1;
 			continue ;
 		}
@@ -551,7 +507,7 @@ void				lexer_creating(char *command, t_lexer *lexer, t_shell *shell)
 	last = command - 1;
 	init_ftvector(&lexer->tokens);
 	lexer_creating_cycle(&command, lexer, token, last, shell);
-//	lexing_print(lexer);
+	lexing_print(lexer);
 	history_append(command, &shell->history);
 //	free(command);
 }
@@ -640,7 +596,7 @@ t_ast				*create_command(t_lexer *lexer, int beg, int end)
 	return (ast);
 }
 
-void				create_redirection_ast_content_heredoc(t_ast *ast, t_shell *shell)
+void				create_redirection_ast_content_heredoc(t_ast *ast)
 {
 	char	*line;
 	char	*end;
@@ -650,7 +606,7 @@ void				create_redirection_ast_content_heredoc(t_ast *ast, t_shell *shell)
 	end = ((t_binary_token *)ast->right->content)->right;
 	str = 0;
 	ft_printf("> ");
-	while ((line = input_command(&shell->history)))
+	while ((line = input_command()))
 	{
 		if (ft_strequ(line, end))
 			break ;
@@ -667,7 +623,7 @@ void				create_redirection_ast_content_heredoc(t_ast *ast, t_shell *shell)
 	((t_binary_token *)(ast->right->content))->right = str;
 }
 
-t_ast				*create_redirection_ast_content(t_lexer *lexer, int pos, t_shell *shell)
+t_ast				*create_redirection_ast_content(t_lexer *lexer, int pos)
 {
 	t_ast	*ast;
 
@@ -680,12 +636,12 @@ t_ast				*create_redirection_ast_content(t_lexer *lexer, int pos, t_shell *shell
 	ast->right->content = (t_binary_token *)ft_memalloc(sizeof(t_binary_token));
 	((t_binary_token *)ast->right->content)->right = ((t_token *)lexer->tokens.elem[pos + 1])->str;
 	if (ft_strequ(ast->content, "<<"))
-		create_redirection_ast_content_heredoc(ast, shell);
+		create_redirection_ast_content_heredoc(ast);
 	((t_token *)lexer->tokens.elem[pos + 1])->type = USED;
 	return (ast);
 }
 
-t_ast				*create_redirection_ast(t_lexer *lexer, int beg, int end, t_shell *shell)
+t_ast				*create_redirection_ast(t_lexer *lexer, int beg, int end)
 {
 	t_ast		*ast;
 	char		*str;
@@ -700,35 +656,35 @@ t_ast				*create_redirection_ast(t_lexer *lexer, int beg, int end, t_shell *shel
 		free_ast(ast);
 		return (0);
 	}
-	ast = create_redirection_ast_content(lexer, pos, shell);
+	ast = create_redirection_ast_content(lexer, pos);
 	if (pos >= 1 && ((t_token *)lexer->tokens.elem[pos - 1])->type == IO_NUMBER)
 	{
 		((t_binary_token *)ast->right->content)->left = ((t_token *)lexer->tokens.elem[pos - 1])->str;
 		((t_token *)lexer->tokens.elem[pos - 1])->type = USED;
 	}
-	if (!(ast->left = create_redirection_ast(lexer, beg, end, shell)) && free_ast(ast))
+	if (!(ast->left = create_redirection_ast(lexer, beg, end)) && free_ast(ast))
 		return (0);
 	return (ast);
 }
 
-t_ast				*create_separator_ast(t_lexer *lexer, int beg, int end, int level, t_shell *shell);
+t_ast				*create_separator_ast(t_lexer *lexer, int beg, int end, int level);
 
 t_ast				*create_separator_ast_notfound(t_lexer *lexer,
-		int beg, int end, int level, t_shell *shell)
+		int beg, int end, int level)
 {
 	if (level == 1)
-		return (create_redirection_ast(lexer, beg, end, shell));
+		return (create_redirection_ast(lexer, beg, end));
 	else
-		return (create_separator_ast(lexer, beg, end, level + 1, shell));
+		return (create_separator_ast(lexer, beg, end, level + 1));
 }
 
-t_ast				*create_separator_ast(t_lexer *lexer, int beg, int end, int level, t_shell *shell)
+t_ast				*create_separator_ast(t_lexer *lexer, int beg, int end, int level)
 {
 	int		pos;
 	t_ast	*ast;
 
 	if ((pos = last_token_pos(lexer, beg, end, separator_op[level])) == -1)
-		return (create_separator_ast_notfound(lexer, beg, end, level, shell));
+		return (create_separator_ast_notfound(lexer, beg, end, level));
 	if (lexer->tokens.len <= pos + 1 || !pos)
 	{
 		ft_fprintf(2, "21sh: parse operator error - incorrect position\n");
@@ -737,12 +693,12 @@ t_ast				*create_separator_ast(t_lexer *lexer, int beg, int end, int level, t_sh
 	ast = (t_ast *)ft_memalloc(sizeof(t_ast));
 	ast->content = (void *)ft_strdup(((t_token *)lexer->tokens.elem[pos])->str);
 	ast->type = OPERATOR;
-	if (!(ast->left = create_separator_ast(lexer, beg, pos - 1, level, shell)) && free_ast(ast))
+	if (!(ast->left = create_separator_ast(lexer, beg, pos - 1, level)) && free_ast(ast))
 		return (0);
-	if (!level && !(ast->right = create_separator_ast(lexer, pos + 1, end, level + 1, shell)) &&
+	if (!level && !(ast->right = create_separator_ast(lexer, pos + 1, end, level + 1)) &&
 			free_ast(ast))
 		return (0);
-	else if (level == 1 && !(ast->right = create_redirection_ast(lexer, pos + 1, end, shell)) &&
+	else if (level == 1 && !(ast->right = create_redirection_ast(lexer, pos + 1, end)) &&
 			free_ast(ast))
 		return (0);
 	return (ast);
@@ -1018,7 +974,7 @@ int					main(void)
 		change_termios(&shell.initfd, 0);
 		ft_bzero(&lexer, sizeof(t_lexer));
 		ft_printf("$> ");
-		if (!(command = input_command(&shell.history)))
+		if (!(command = input_command()))
 			continue ;
 		lexer_creating(command, &lexer, &shell);
 		if (!lexer.tokens.len)
@@ -1028,7 +984,7 @@ int					main(void)
 			shell.history.commands[shell.history.last] = 0;
 			continue ;
 		}
-		if (!(ast = create_separator_ast(&lexer, 0, lexer.tokens.len - 1, 0, &shell)))
+		if (!(ast = create_separator_ast(&lexer, 0, lexer.tokens.len - 1, 0)))
 		{
 			free(shell.history.commands[shell.history.last]);
 			shell.history.commands[shell.history.last] = 0;
@@ -1036,14 +992,14 @@ int					main(void)
 		else
 		{
 			++shell.history.last;
-			shell.history.current = shell.history.last;
+			shell.history.current = last;
 		}
 		print_ast(ast);
 		change_termios(&shell.initfd, 1);
 		parse_ast(ast, &shell, 1);
 		free_lexer(&lexer);
 		free_ast(ast);
-//		system("leaks -quiet 21sh");
+		system("leaks -quiet 21sh");
 	}
 	free_double_arr(shell.env);
 	//TODO: close shell->initfd
