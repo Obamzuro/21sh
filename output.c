@@ -6,11 +6,13 @@
 /*   By: obamzuro <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/08/21 13:19:59 by obamzuro          #+#    #+#             */
-/*   Updated: 2018/09/01 23:21:58 by obamzuro         ###   ########.fr       */
+/*   Updated: 2018/09/02 13:20:07 by obamzuro         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "include/21sh.h"
+#include "include/libft.h"
+#include "include/ft_printf.h"
 
 int main(int argc, char **argv)
 {
@@ -18,12 +20,11 @@ int main(int argc, char **argv)
 	int		i;
 	
 	i = 0;
-	while (i < 20)
+	while (i < 500000)
 	{
-		if (write(1, "woop", 4) < 1)
-			break ;
+		write(1, "woop", 4);
 		++i;
-		write(2, "q", 1);
+		ft_fprintf(2, "%d\n", i);
 	}
 //	while (1)
 //		;

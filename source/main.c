@@ -6,7 +6,7 @@
 /*   By: obamzuro <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/05/13 15:05:22 by obamzuro          #+#    #+#             */
-/*   Updated: 2018/09/01 23:29:21 by obamzuro         ###   ########.fr       */
+/*   Updated: 2018/09/02 16:36:15 by obamzuro         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -104,48 +104,99 @@ void				input_command_back(char *buffer, int seek)
 	}
 }
 
-int					line_editing(char letter[8], char **buffer,
-		int *seek, int cursorpos[2])
+int					line_editing(char letter[8], t_ftvector *buffer,
+		int seek[2], int cursorpos[2])
 {
-	char	*command;
 	char	*temp;
 	int		i;
+	int		buflen;
 
+	buflen = ft_strlen(buffer->elem[seek[0]]);
 	if (ft_strequ(letter, LEFT))
 	{
-		if (*seek)
+		if (seek[1])
 		{
-			command = tgetstr("le", 0);
-			if (command)
-				ft_printf(command);
-			--(*seek);
+			ft_printf(tgetstr("le", 0));
+			--seek[1];
 		}
 		return (1);
 	}
 	else if (ft_strequ(letter, RIGHT))
 	{
-		if (*seek != ft_strlen(*buffer))
+		if (seek[1] != buflen)
 		{
-			command = tgetstr("nd", 0);
-			if (command)
-				ft_printf(command);
-			++(*seek);
+			ft_printf(tgetstr("nd", 0));
+			++seek[1];
 		}
 		return (1);
 	}
 	else if (ft_strequ(letter, BACKSPACE))
 	{
-		if (*seek)
+		if (seek[1])
 		{
 			ft_putstr(tgoto(tgetstr("cm", 0), cursorpos[1] - 1, cursorpos[0] - 1));
 			ft_putstr(tgetstr("ce", 0));
-			(*buffer)[*seek - 1] = 0;
-			temp = *buffer;
-			*buffer = ft_strjoin(*buffer, *buffer + *seek);
-			ft_putstr(*buffer);
+			((char *)buffer->elem[seek[0]])[seek[1] - 1] = 0;
+			temp = buffer->elem[seek[0]];
+			buffer->elem[seek[0]] = ft_strjoin(buffer->elem[seek[0]], buffer->elem[seek[0]] + seek[1]);
+			ft_putstr(buffer->elem[seek[0]]);
 			free(temp);
-			input_command_back(*buffer, *seek - 1);
-			--(*seek);
+			input_command_back(buffer->elem[seek[0]], seek[1] - 1);
+			--seek[1];
+		}
+		return (1);
+	}
+	else if (ft_strequ(letter, ALTLEFT))
+	{
+		if (seek[1])
+		{
+			--seek[1];
+			ft_printf(tgetstr("le", 0));
+			while (seek[1] > 0 && ((char *)buffer->elem[seek[0]])[seek[1]] == ' ')
+			{
+				ft_printf(tgetstr("le", 0));
+				--seek[1];
+			}
+			while (seek[1] > 0 && ((char *)buffer->elem[seek[0]])[seek[1] - 1] != ' ')
+			{
+				ft_printf(tgetstr("le", 0));
+				--seek[1];
+			}
+		}
+		return (1);
+	}
+	else if (ft_strequ(letter, ALTRIGHT))
+	{
+		if (seek[1] != buflen)
+		{
+			while (seek[1] != buflen && ((char *)buffer->elem[seek[0]])[seek[1]] == ' ')
+			{
+				ft_printf(tgetstr("nd", 0));
+				++seek[1];
+			}
+			while (seek[1] != buflen && ((char *)buffer->elem[seek[0]])[seek[1]] != ' ')
+			{
+				ft_printf(tgetstr("nd", 0));
+				++seek[1];
+			}
+		}
+		return (1);
+	}
+	else if (ft_strequ(letter, HOME))
+	{
+		while (seek[1])
+		{
+			--seek[1];
+			ft_printf(tgetstr("le", 0));
+		}
+		return (1);
+	}
+	else if (ft_strequ(letter, END))
+	{
+		while (seek[1] != buflen)
+		{
+			++seek[1];
+			ft_printf(tgetstr("nd", 0));
 		}
 		return (1);
 	}
@@ -155,39 +206,56 @@ int					line_editing(char letter[8], char **buffer,
 char				*input_command(void)
 {
 	char		letter[8];
-	char		*buffer;
+	t_ftvector	buffer;
 	char		*temp;
+	char		*ret;
 	int			cursorpos[2];
-	int			seek;
+	int			seek[2];
 
-	buffer = 0;
-	seek = 0;
+	init_ftvector(&buffer);
+	temp = (char *)ft_memalloc(1);
+	push_ftvector(&buffer, temp);
+	temp = 0;
+	ft_bzero(cursorpos, sizeof(cursorpos));
+	ft_bzero(seek, sizeof(seek));
 	get_cursor_position(cursorpos);
 	while (1)
 	{
 		ft_bzero(letter, sizeof(letter));
 		read(0, letter, sizeof(letter));
-		if (line_editing(letter, &buffer, &seek, cursorpos))
+		if (line_editing(letter, &buffer, seek, cursorpos))
 			continue ;
 		if (!letter[1] && letter[0] == '\n')
 		{
 			write(1, letter, sizeof(letter));
 			break ;
 		}
-		temp = buffer;
+		temp = buffer.elem[seek[0]];
 		write(1, letter, sizeof(letter));
-		if (seek != ft_strlen(buffer))
+		if (seek[1] != ft_strlen(buffer.elem[seek[0]]))
 		{
-			write(1, buffer + seek, ft_strlen(buffer) - seek);
-			input_command_back(buffer, seek);
-			buffer = ft_strjoin_inner(buffer, letter, seek);
+			buffer.elem[seek[0]] = ft_strjoin_inner((char *)buffer.elem[seek[0]], letter, seek[1]);
+			ft_putstr(tgoto(tgetstr("cm", 0), cursorpos[1] - 1, cursorpos[0] - 1));
+			write(1, (char *)(buffer.elem[seek[0]]), ft_strlen(((char *)buffer.elem[seek[0]])));
+			input_command_back(buffer.elem[seek[0]], seek[1] + 1);
 		}
 		else
-			buffer = ft_strjoin(buffer, letter);
+			buffer.elem[seek[0]] = ft_strjoin((char *)buffer.elem[seek[0]], letter);
 		free(temp);
-		++seek;
+		++seek[1];
 	}
-	return (buffer);
+
+	seek[0] = 0;
+	ret = 0;
+	while (seek[0] != buffer.len)
+	{
+		temp = ret;
+		ret = ft_strjoin(ret, buffer.elem[seek[0]]);
+		free(temp);
+		++seek[0];
+	}
+	free_ftvector(&buffer);
+	return (ret);
 }
 
 int					lexing_try_append_operator(char buf, char **tokenstr)
@@ -881,8 +949,8 @@ int						parse_ast(t_ast *ast, t_shell *shell, int needfork)
 void				preparation(t_shell *shell)
 {
 	term_associate();
-//	shell->initfd.fdin = dup(0);
-//	shell->initfd.fdout = dup(1);
+	shell->initfd.fdin = dup(0);
+	shell->initfd.fdout = dup(1);
 	shell->env = fill_env();
 	//signal(SIGINT, int_handler);
 }

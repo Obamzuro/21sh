@@ -6,7 +6,7 @@
 /*   By: obamzuro <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/04/10 15:51:20 by obamzuro          #+#    #+#             */
-/*   Updated: 2018/08/28 20:54:14 by obamzuro         ###   ########.fr       */
+/*   Updated: 2018/09/02 12:27:01 by obamzuro         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -57,6 +57,9 @@ void		ft_fprintf(int fd, const char *src, ...)
 	buff.fd = fd;
 	buff.line = malloc(PRINTF_BUFF_SIZE);
 	va_start(ap, src);
+	fill_sizes();
+	fill_convs();
+	fill_flags();
 	while (*src)
 	{
 		if (*src == '%')
