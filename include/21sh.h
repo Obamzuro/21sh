@@ -6,7 +6,7 @@
 /*   By: obamzuro <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/07/04 11:35:30 by obamzuro          #+#    #+#             */
-/*   Updated: 2018/09/03 01:26:11 by obamzuro         ###   ########.fr       */
+/*   Updated: 2018/09/03 22:36:46 by obamzuro         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,7 +29,7 @@
 # define AM_LEVELS 2
 # define AM_SEPARATOROP 2
 # define AM_IOFILEOP 7
-# define AM_HISTORY 20
+# define AM_HISTORY 5
 
 # define ESC "\x1B"
 # define DOWN "\x1B[B"
@@ -48,7 +48,8 @@
 # define ALTDOWN "\x1b\x1b\x5b\x42"
 # define HOME "\x1b\x5b\x48"
 # define END "\x1b\x5b\x46"
-
+# define SHIFTLEFT "\x1b\x5b\x31\x3b\x32\x44"
+# define SHIFTRIGHT "\x1b\x5b\x31\x3b\x32\x43"
 
 typedef enum			e_tokentype
 {
@@ -76,6 +77,8 @@ typedef struct			s_lineeditor
 	int		seek;
 	char	*buffer;
 	int		is_history_searched;
+	int		selected[2];
+	int		selectedmode;
 }						t_lineeditor;
 
 typedef struct			s_initfd
