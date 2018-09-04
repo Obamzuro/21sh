@@ -6,7 +6,7 @@
 /*   By: obamzuro <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/07/04 11:35:30 by obamzuro          #+#    #+#             */
-/*   Updated: 2018/09/03 22:36:46 by obamzuro         ###   ########.fr       */
+/*   Updated: 2018/09/04 00:29:42 by obamzuro         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -50,6 +50,9 @@
 # define END "\x1b\x5b\x46"
 # define SHIFTLEFT "\x1b\x5b\x31\x3b\x32\x44"
 # define SHIFTRIGHT "\x1b\x5b\x31\x3b\x32\x43"
+# define ALTX "\xe2\x89\x88"
+# define ALTC "\xc3\xa7"
+# define ALTV "\xe2\x88\x9a"
 
 typedef enum			e_tokentype
 {
@@ -79,6 +82,7 @@ typedef struct			s_lineeditor
 	int		is_history_searched;
 	int		selected[2];
 	int		selectedmode;
+	char	*cpbuf;
 }						t_lineeditor;
 
 typedef struct			s_initfd
