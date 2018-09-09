@@ -6,26 +6,29 @@
 #    By: obamzuro <marvin@42.fr>                    +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2018/05/11 15:56:03 by obamzuro          #+#    #+#              #
-#    Updated: 2018/09/01 20:27:52 by obamzuro         ###   ########.fr        #
+#    Updated: 2018/09/08 16:18:30 by obamzuro         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
 NAME = 21sh
 
 SRCNAME = main.c		\
-		  init_term.c\
-		  msh_filler.c\
-		  msh_exec.c\
-		  msh_free.c\
-		  msh_get_printenv.c\
-		  msh_cd.c\
-		  msh_echo.c\
-		  msh_exit.c\
-		  msh_print_pwd.c\
-		  msh_setenv.c\
-		  msh_signal_handler.c\
-		  msh_unsetenv.c\
-		  msh_replace_env_variable.c
+		  msh/init_term.c\
+		  msh/msh_filler.c\
+		  msh/msh_exec.c\
+		  msh/msh_free.c\
+		  msh/msh_get_printenv.c\
+		  msh/msh_cd.c\
+		  msh/msh_echo.c\
+		  msh/msh_exit.c\
+		  msh/msh_print_pwd.c\
+		  msh/msh_setenv.c\
+		  msh/msh_signal_handler.c\
+		  msh/msh_unsetenv.c\
+		  msh/msh_replace_env_variable.c\
+		  ast_creator/creator.c\
+		  lexer/lexer.c\
+		  parser/parser.c
 
 FLAGS = -g 
 

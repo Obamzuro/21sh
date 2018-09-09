@@ -6,7 +6,7 @@
 /*   By: obamzuro <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/07/04 11:35:30 by obamzuro          #+#    #+#             */
-/*   Updated: 2018/09/04 00:29:42 by obamzuro         ###   ########.fr       */
+/*   Updated: 2018/09/09 13:04:32 by obamzuro         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -30,6 +30,7 @@
 # define AM_SEPARATOROP 2
 # define AM_IOFILEOP 7
 # define AM_HISTORY 5
+# define AM_ESC 3
 
 # define ESC "\x1B"
 # define DOWN "\x1B[B"
@@ -53,6 +54,7 @@
 # define ALTX "\xe2\x89\x88"
 # define ALTC "\xc3\xa7"
 # define ALTV "\xe2\x88\x9a"
+# define ALTQ "\xc5\x93"
 
 typedef enum			e_tokentype
 {
@@ -75,14 +77,15 @@ typedef struct			s_history
 
 typedef struct			s_lineeditor
 {
-	char	letter[8];
-	int		cursorpos[2];
-	int		seek;
-	char	*buffer;
-	int		is_history_searched;
-	int		selected[2];
-	int		selectedmode;
-	char	*cpbuf;
+	char			letter[8];
+	int				curpos[2];
+	int				seek;
+	char			*buffer;
+	int				is_history_searched;
+	int				selected[2];
+	int				selectedmode;
+	char			*cpbuf;
+	struct winsize	ws;
 }						t_lineeditor;
 
 typedef struct			s_initfd
@@ -135,6 +138,12 @@ typedef struct			s_comm_corr
 	void	(*func)(char **, char ***);
 }						t_comm_corr;
 
+typedef struct			s_esc_corr
+{
+	char	*str;
+	void	(*func)(t_lineeditor *);
+}						t_esc_corr;
+
 volatile sig_atomic_t	g_sigint;
 
 char					*msh_strjoin_char(const char *s1,
@@ -163,4 +172,18 @@ void					free_double_arr(char **args);
 void					term_associate(void);
 void					change_termios(t_initfd *initfd, int canon);
 char					**init_operators(void);
+
+void				free_lexer(t_lexer *lexer);
+void				lexer_creating(char *command, t_lexer *lexer, t_shell *shell);
+void				history_append(char *command, t_history *history);
+int						parse_ast(t_ast *ast, t_shell *shell, int needfork);
+t_ast				*create_separator_ast(t_lexer *lexer, int beg, int end, int level, t_shell *shell);
+char				*input_command(t_history *history);
+int					free_ast(t_ast *ast);
+void				print_ast(t_ast *ast);
+int			handle_commands(char **args, char ***env);
+
+void				line_editing_left(t_lineeditor *lineeditor);
+void				line_editing_right(t_lineeditor *lineeditor);
+void				line_editing_help(t_lineeditor *lineeditor);
 #endif
