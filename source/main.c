@@ -6,7 +6,7 @@
 /*   By: obamzuro <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/05/13 15:05:22 by obamzuro          #+#    #+#             */
-/*   Updated: 2018/09/09 22:13:32 by obamzuro         ###   ########.fr       */
+/*   Updated: 2018/09/09 22:18:43 by obamzuro         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -378,11 +378,11 @@ void				line_editing_right(t_lineeditor *lineeditor)
 	buflen = ft_strlen(lineeditor->buffer);
 	if (lineeditor->seek != buflen)
 	{
-		if (lineeditor->ws.ws_col == lineeditor->curpos[1])
+		if (lineeditor->ws.ws_col - 1 == lineeditor->curpos[1])
 		{
-			ft_putstr(tgoto(tgetstr("cm", 0), 0, lineeditor->curpos[0]));
 			++lineeditor->curpos[0];
-			lineeditor->curpos[1] = 1;
+			ft_putstr(tgoto(tgetstr("cm", 0), 0, lineeditor->curpos[0]));
+			lineeditor->curpos[1] = 0;
 		}
 		else
 		{
@@ -750,7 +750,7 @@ void				print_buffer(t_lineeditor *lineeditor)
 	//		lineeditor->seek);
 	//get_cursor_position(lineeditor->curpos);
 	lineeditor->seek += buflen;
-//	left_shift_cursor(buflen - prevseek - 1, lineeditor);
+	left_shift_cursor(buflen - prevseek - 1, lineeditor);
 }
 
 char				*input_command(t_history *history)
