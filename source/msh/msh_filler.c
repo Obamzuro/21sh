@@ -6,7 +6,7 @@
 /*   By: obamzuro <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/05/19 13:52:42 by obamzuro          #+#    #+#             */
-/*   Updated: 2018/09/09 10:56:44 by obamzuro         ###   ########.fr       */
+/*   Updated: 2018/09/10 18:49:15 by obamzuro         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,6 +27,10 @@ t_esc_corr g_esc[] =
 {
 	{LEFT, line_editing_left},
 	{RIGHT, line_editing_right},
+	{UP, line_editing_up},
+	{DOWN, line_editing_down},
+	{ALTLEFT, line_editing_begword},
+	{ALTRIGHT, line_editing_endword},
 	{ALTQ, line_editing_help}
 };
 

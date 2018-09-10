@@ -87,6 +87,7 @@ t_token				*lexing_handling_quotes(t_lexer *lexer, t_token *token, char **last,
 			history_append(*command, &shell->history);
 			history_append("\n", &shell->history);
 			free(*command);
+			ft_putstr("$> ");
 			*command = input_command(&shell->history);
 			*last = *command - 1;
 			continue ;
