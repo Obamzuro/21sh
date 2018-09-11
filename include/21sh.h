@@ -6,7 +6,7 @@
 /*   By: obamzuro <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/07/04 11:35:30 by obamzuro          #+#    #+#             */
-/*   Updated: 2018/09/11 12:32:34 by obamzuro         ###   ########.fr       */
+/*   Updated: 2018/09/11 16:09:43 by obamzuro         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -30,7 +30,7 @@
 # define AM_SEPARATOROP 2
 # define AM_IOFILEOP 7
 # define AM_HISTORY 5
-# define AM_ESC 10
+# define AM_ESC 17
 
 # define ESC "\x1B"
 # define DOWN "\x1B[B"
@@ -193,6 +193,13 @@ void				line_editing_altdown(t_lineeditor *lineeditor, t_history *history);
 void				line_editing_begword(t_lineeditor *lineeditor, t_history *history);
 void				line_editing_endword(t_lineeditor *lineeditor, t_history *history);
 void				line_editing_backspace(t_lineeditor *lineeditor, t_history *history);
+void				line_editing_home(t_lineeditor *lineeditor, t_history *history);
+void				line_editing_end(t_lineeditor *lineeditor, t_history *history);
+void				line_editing_shiftleft(t_lineeditor *lineeditor, t_history *history);
+void				line_editing_shiftright(t_lineeditor *lineeditor, t_history *history);
+void				line_editing_altc(t_lineeditor *lineeditor, t_history *history);
+void				line_editing_altv(t_lineeditor *lineeditor, t_history *history);
+void				line_editing_altx(t_lineeditor *lineeditor, t_history *history);
 void				line_editing_help(t_lineeditor *lineeditor, t_history *history);
 
 void				left_shift_cursor(int amount, t_lineeditor *lineeditor, t_history *history);
