@@ -6,7 +6,7 @@
 /*   By: obamzuro <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/07/04 11:35:30 by obamzuro          #+#    #+#             */
-/*   Updated: 2018/09/10 18:54:57 by obamzuro         ###   ########.fr       */
+/*   Updated: 2018/09/11 12:32:34 by obamzuro         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -30,7 +30,7 @@
 # define AM_SEPARATOROP 2
 # define AM_IOFILEOP 7
 # define AM_HISTORY 5
-# define AM_ESC 7
+# define AM_ESC 10
 
 # define ESC "\x1B"
 # define DOWN "\x1B[B"
@@ -142,6 +142,7 @@ typedef struct			s_esc_corr
 {
 	char	*str;
 	void	(*func)(t_lineeditor *, t_history *);
+	int		ret : 1;
 }						t_esc_corr;
 
 volatile sig_atomic_t	g_sigint;
@@ -187,8 +188,11 @@ void				line_editing_left(t_lineeditor *lineeditor, t_history *history);
 void				line_editing_right(t_lineeditor *lineeditor, t_history *history);
 void				line_editing_up(t_lineeditor *lineeditor, t_history *history);
 void				line_editing_down(t_lineeditor *lineeditor, t_history *history);
+void				line_editing_altup(t_lineeditor *lineeditor, t_history *history);
+void				line_editing_altdown(t_lineeditor *lineeditor, t_history *history);
 void				line_editing_begword(t_lineeditor *lineeditor, t_history *history);
 void				line_editing_endword(t_lineeditor *lineeditor, t_history *history);
+void				line_editing_backspace(t_lineeditor *lineeditor, t_history *history);
 void				line_editing_help(t_lineeditor *lineeditor, t_history *history);
 
 void				left_shift_cursor(int amount, t_lineeditor *lineeditor, t_history *history);
