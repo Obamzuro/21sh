@@ -6,7 +6,7 @@
 /*   By: obamzuro <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/05/13 15:05:22 by obamzuro          #+#    #+#             */
-/*   Updated: 2018/09/12 18:44:21 by obamzuro         ###   ########.fr       */
+/*   Updated: 2018/09/12 21:26:05 by obamzuro         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -480,40 +480,6 @@ void				line_editing_help(t_lineeditor *lineeditor, t_history *history)
 //	return (1);
 }
 
-void				line_editing_altx(t_lineeditor *lineeditor,
-		t_history *history)
-{
-	int		offset;
-	int		left;
-	int		right;
-	char	*temp;
-	char	*temp2;
-
-	if (!lineeditor->selectedmode)
-		return ;
-	lineeditor->selectedmode = 0;
-	left = lineeditor->selected[0];
-	right = lineeditor->selected[1];
-	if (left > right)
-	{
-		left = lineeditor->selected[1];
-		right = lineeditor->selected[0];
-	}
-	offset = right - left;
-	if (lineeditor->cpbuf)
-		free(lineeditor->cpbuf);
-	lineeditor->cpbuf = ft_strsub(lineeditor->buffer, left, offset);
-	temp = ft_strsub(lineeditor->buffer, 0, left);
-	temp2 = lineeditor->buffer;
-	lineeditor->buffer = ft_strjoin(temp, lineeditor->buffer + right);
-	free(temp2);
-	free(temp);
-	print_buffer(lineeditor, history);
-	line_editing_left(lineeditor, history);
-	lineeditor->selected[0] = -1;
-	lineeditor->selected[1] = -1;
-}
-//
 void				line_editing_altv(t_lineeditor *lineeditor,
 		t_history *history)
 {
@@ -527,6 +493,7 @@ void				line_editing_altv(t_lineeditor *lineeditor,
 	lineeditor->buffer = ft_strjoin_inner(lineeditor->buffer,
 			lineeditor->cpbuf, lineeditor->seek);
 	free(temp);
+	//TODO: REPLACE! forw and back
 	print_buffer(lineeditor, history);
 	while (i < ft_ustrlen(lineeditor->cpbuf) - 1)
 	{
@@ -803,6 +770,31 @@ int					line_editing(t_lineeditor *lineeditor, t_history *history)
 //	return (0);
 //}
 
+void				print_buffer_back(t_lineeditor *lineeditor, t_history *history)
+{
+	left_shift_cursor(lineeditor->seek, lineeditor, history);
+	if (lineeditor->curpos[0] < 0)
+	{
+		lineeditor->curpos[0] = 0;
+		lineeditor->curpos[1] = 3;
+	}
+	ft_putstr(tgoto(tgetstr("cm", 0), lineeditor->curpos[1],
+			lineeditor->curpos[0]));
+}
+
+void				print_buffer_forw(t_lineeditor *lineeditor, t_history *history, int prevseek)
+{
+	ft_printf("%s%s%s%s", tgetstr("le", 0), tgetstr("le", 0),
+			tgetstr("le", 0), tgetstr("cd", 0));
+	write(1, "$> ", 3);
+	write_line(lineeditor);
+	lineeditor->seek += ft_strlen(lineeditor->buffer);
+	left_shift_cursor(ft_strlen(lineeditor->buffer) - prevseek,
+			lineeditor, history);
+	ft_putstr(tgoto(tgetstr("cm", 0), lineeditor->curpos[1],
+			lineeditor->curpos[0]));
+}
+
 void				print_buffer(t_lineeditor *lineeditor, t_history *history)
 {
 	int		prevseek;
@@ -824,6 +816,31 @@ void				print_buffer(t_lineeditor *lineeditor, t_history *history)
 	write_line(lineeditor);
 	lineeditor->seek += buflen;
 	left_shift_cursor(buflen - prevseek, lineeditor, history);
+	ft_putstr(tgoto(tgetstr("cm", 0), lineeditor->curpos[1],
+			lineeditor->curpos[0]));
+}
+
+void				print_buffer_2(t_lineeditor *lineeditor, t_history *history)
+{
+	int		prevseek;
+	int		buflen;
+
+	buflen = ft_strlen(lineeditor->buffer);
+	prevseek = lineeditor->seek;
+	left_shift_cursor(lineeditor->seek, lineeditor, history);
+	if (lineeditor->curpos[0] < 0)
+	{
+		lineeditor->curpos[0] = 0;
+		lineeditor->curpos[1] = 3;
+	}
+	ft_putstr(tgoto(tgetstr("cm", 0), lineeditor->curpos[1],
+			lineeditor->curpos[0]));
+	ft_printf("%s%s%s%s", tgetstr("le", 0), tgetstr("le", 0),
+			tgetstr("le", 0), tgetstr("cd", 0));
+	write(1, "$> ", 3);
+	write_line(lineeditor);
+	lineeditor->seek += buflen;
+	left_shift_cursor(buflen - prevseek - ft_strlen(lineeditor->letter), lineeditor, history);
 	ft_putstr(tgoto(tgetstr("cm", 0), lineeditor->curpos[1],
 			lineeditor->curpos[0]));
 }
@@ -916,8 +933,7 @@ char				*input_command(t_history *history)
   			lineeditor.buffer = ft_strjoin(lineeditor.buffer, lineeditor.letter);
 //		ft_putstr(tgoto(tgetstr("cm", 0), lineeditor.cursorpos[1] - 1, lineeditor.cursorpos[0] - 1));
 		free(temp);
-		print_buffer(&lineeditor, history);
-		line_editing_right(&lineeditor, history);
+		print_buffer_2(&lineeditor, history);
 //		++lineeditor.seek;
 //		++lineeditor.curpos[1];
 	}
@@ -945,6 +961,44 @@ void				preparation(t_shell *shell)
 //	iignal(SIGWINCH, winch_handler);
 	//signal(SIGINT, int_handler);
 }
+
+void				line_editing_altx(t_lineeditor *lineeditor,
+		t_history *history)
+{
+	int		offset;
+	int		left;
+	int		right;
+	char	*temp;
+	char	*temp2;
+	int		prevseek;
+
+	prevseek = lineeditor->seek;
+	if (!lineeditor->selectedmode)
+		return ;
+	lineeditor->selectedmode = 0;
+	left = lineeditor->selected[0];
+	right = lineeditor->selected[1];
+	if (left > right)
+	{
+		left = lineeditor->selected[1];
+		right = lineeditor->selected[0];
+	}
+	offset = right - left;
+	if (lineeditor->cpbuf)
+		free(lineeditor->cpbuf);
+	lineeditor->cpbuf = ft_strsub(lineeditor->buffer, left, offset);
+	temp = ft_strsub(lineeditor->buffer, 0, left);
+	temp2 = lineeditor->buffer;
+	print_buffer_back(lineeditor, history);
+	lineeditor->buffer = ft_strjoin(temp, lineeditor->buffer + right);
+	print_buffer_forw(lineeditor, history, prevseek);
+	free(temp2);
+	free(temp);
+	line_editing_left(lineeditor, history);
+	lineeditor->selected[0] = -1;
+	lineeditor->selected[1] = -1;
+}
+//
 
 int					main(void)
 {
