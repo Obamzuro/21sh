@@ -6,7 +6,7 @@
 /*   By: obamzuro <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/05/13 15:05:22 by obamzuro          #+#    #+#             */
-/*   Updated: 2018/09/12 13:09:50 by obamzuro         ###   ########.fr       */
+/*   Updated: 2018/09/12 14:50:18 by obamzuro         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -192,6 +192,10 @@ void				line_editing_left_notmove(t_lineeditor *lineeditor, t_history *history)
 				i = lineeditor->seek - 2;
 				while (i >= 0 && lineeditor->buffer[i] != '\n')
 				{
+					//NEW!
+					while (lineeditor->buffer[i] & 0x80 &&
+							~lineeditor->buffer[i] & 0x40)
+						--i;
 					++lineeditor->curpos[1];
 					--i;
 				}
@@ -213,6 +217,10 @@ void				line_editing_left_notmove(t_lineeditor *lineeditor, t_history *history)
 		}
 		else
 			--lineeditor->curpos[1];
+		//NEW!
+		while (lineeditor->buffer[lineeditor->seek - 1] & 0x80 &&
+				~lineeditor->buffer[lineeditor->seek - 1] & 0x40)
+			--lineeditor->seek;
 		--lineeditor->seek;
 	}
 }
@@ -297,7 +305,7 @@ void				write_line_chcurpos(t_lineeditor *lineeditor)
 			//TODO: limit?
 			++lineeditor->curpos[0];
 		}
-		nextlinebreak = ft_ccount(str, '\n');
+		nextlinebreak = ft_uccount(str, '\n');
 		linewidth = lineeditor->curpos[1] + nextlinebreak;
 		if (linewidth % lineeditor->ws.ws_col == 0)
 		{
@@ -309,7 +317,9 @@ void				write_line_chcurpos(t_lineeditor *lineeditor)
 		lineeditor->curpos[0] += linewidth / (lineeditor->ws.ws_col);
 		if (lineeditor->curpos[0] >= lineeditor->ws.ws_row)
 			lineeditor->curpos[0] = lineeditor->ws.ws_row - 1;
-		str += nextlinebreak;
+		//NEW!
+//		str += nextlinebreak;
+		str += ft_ccount(str, '\n');
 		if (!*str)
 			break ;
 		++str;
@@ -347,10 +357,18 @@ void				left_shift_cursor(int amount, t_lineeditor *lineeditor,
 		t_history *history)
 {
 	int				i;
+	int				seek;
 
 	i = 0;
 	while (i < amount)
 	{
+		seek = lineeditor->seek;
+		while (lineeditor->buffer[seek - 1] & 0x80 &&
+			~lineeditor->buffer[seek - 1] & 0x40)
+		{
+			++i;
+			--seek;
+		}
 		line_editing_left_notmove(lineeditor, history);
 		++i;
 	}
@@ -431,7 +449,16 @@ void				line_editing_right(t_lineeditor *lineeditor, t_history *history)
 			ft_putstr(tgoto(tgetstr("cm", 0),
 				lineeditor->curpos[1], lineeditor->curpos[0]));
 		}
-		++(lineeditor->seek);
+		if ((unsigned char)lineeditor->buffer[lineeditor->seek] >> 5 == 0b110 ||
+			(unsigned char)lineeditor->buffer[lineeditor->seek] >> 4 == 0b1110 ||
+			(unsigned char )lineeditor->buffer[lineeditor->seek] >> 3 == 0b11110)
+		{
+			++lineeditor->seek;
+			while (lineeditor->buffer[lineeditor->seek] && (unsigned char)lineeditor->buffer[lineeditor->seek] >> 6 == 0b10)
+				++lineeditor->seek;
+		}
+		else
+			++(lineeditor->seek);
 	}
 }
 
@@ -506,6 +533,7 @@ void				line_editing_altv(t_lineeditor *lineeditor,
 		line_editing_right(lineeditor, history);
 		++i;
 	}
+	line_editing_right(lineeditor, history);
 }
 
 void				line_editing_altc(t_lineeditor *lineeditor,
@@ -617,7 +645,7 @@ void				line_editing_shiftleft(t_lineeditor *lineeditor,
 		line_editing_left(lineeditor, history);
 		lineeditor->selected[0] = lineeditor->seek;
 		print_buffer(lineeditor, history);
-		line_editing_left(lineeditor, history);
+		//line_editing_left(lineeditor, history);
 	}
 }
 
@@ -632,7 +660,7 @@ void				line_editing_shiftright(t_lineeditor *lineeditor,
 		line_editing_right(lineeditor, history);
 		lineeditor->selected[0] = lineeditor->seek;
 		print_buffer(lineeditor, history);
-		line_editing_left(lineeditor, history);
+		//line_editing_left(lineeditor, history);
 	}
 }
 
@@ -652,7 +680,7 @@ int					line_editing(t_lineeditor *lineeditor, t_history *history)
 		lineeditor->selected[0] = -1;
 		lineeditor->selected[1] = -1;
 		print_buffer(lineeditor, history);
-		line_editing_left(lineeditor, history);
+		//line_editing_left(lineeditor, history);
 	}
 	while (i < AM_ESC)
 	{
@@ -795,7 +823,7 @@ void				print_buffer(t_lineeditor *lineeditor, t_history *history)
 	write(1, "$> ", 3);
 	write_line(lineeditor);
 	lineeditor->seek += buflen;
-	left_shift_cursor(buflen - prevseek - 1, lineeditor, history);
+	left_shift_cursor(buflen - prevseek, lineeditor, history);
 	ft_putstr(tgoto(tgetstr("cm", 0), lineeditor->curpos[1],
 			lineeditor->curpos[0]));
 }
@@ -889,6 +917,7 @@ char				*input_command(t_history *history)
 //		ft_putstr(tgoto(tgetstr("cm", 0), lineeditor.cursorpos[1] - 1, lineeditor.cursorpos[0] - 1));
 		free(temp);
 		print_buffer(&lineeditor, history);
+		line_editing_right(&lineeditor, history);
 //		++lineeditor.seek;
 //		++lineeditor.curpos[1];
 	}
