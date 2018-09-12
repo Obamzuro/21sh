@@ -6,7 +6,7 @@
 /*   By: obamzuro <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/05/13 15:05:22 by obamzuro          #+#    #+#             */
-/*   Updated: 2018/09/12 14:50:18 by obamzuro         ###   ########.fr       */
+/*   Updated: 2018/09/12 14:58:01 by obamzuro         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -528,7 +528,7 @@ void				line_editing_altv(t_lineeditor *lineeditor,
 			lineeditor->cpbuf, lineeditor->seek);
 	free(temp);
 	print_buffer(lineeditor, history);
-	while (i < ft_strlen(lineeditor->cpbuf) - 1)
+	while (i < ft_ustrlen(lineeditor->cpbuf) - 1)
 	{
 		line_editing_right(lineeditor, history);
 		++i;
