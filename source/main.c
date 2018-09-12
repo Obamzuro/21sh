@@ -6,7 +6,7 @@
 /*   By: obamzuro <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/05/13 15:05:22 by obamzuro          #+#    #+#             */
-/*   Updated: 2018/09/11 16:11:19 by obamzuro         ###   ########.fr       */
+/*   Updated: 2018/09/12 13:09:50 by obamzuro         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -800,6 +800,39 @@ void				print_buffer(t_lineeditor *lineeditor, t_history *history)
 			lineeditor->curpos[0]));
 }
 
+int					after_read_unicode(t_lineeditor *lineeditor)
+{
+	unsigned char	firstletter;
+
+	firstletter = lineeditor->letter[0];
+	if (firstletter & 0x80)
+	{
+		if (firstletter >> 5 == 0b110)
+		{
+			//TODO: if read() == -1 return 0
+			read(0, lineeditor->letter + 1, 1);
+			return (1);
+		}
+		else if (firstletter >> 4 == 0b1110)
+		{
+			read(0, lineeditor->letter + 1, 2);
+			return (1);
+		}
+		else if (firstletter >> 3 == 0b11110)
+		{
+			read(0, lineeditor->letter + 1, 3);
+			return (1);
+		}
+		return (0);
+	}
+	else if (firstletter == 0x1b)
+	{
+		read(0, lineeditor->letter + 1, 7);
+		return (1);
+	}
+	return (1);
+}
+
 char				*input_command(t_history *history)
 {
 	t_lineeditor	lineeditor;
@@ -816,7 +849,8 @@ char				*input_command(t_history *history)
 	while (1)
 	{
 		ft_bzero(lineeditor.letter, sizeof(lineeditor.letter));
-		read(0, lineeditor.letter, sizeof(lineeditor.letter));
+		read(0, lineeditor.letter, 1);
+		after_read_unicode(&lineeditor);
 		if (line_editing(&lineeditor, history))
 		{
 			if (ft_strequ(lineeditor.letter, BACKSPACE) && lineeditor.is_history_searched)
