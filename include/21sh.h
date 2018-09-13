@@ -6,7 +6,7 @@
 /*   By: obamzuro <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/07/04 11:35:30 by obamzuro          #+#    #+#             */
-/*   Updated: 2018/09/12 13:02:49 by obamzuro         ###   ########.fr       */
+/*   Updated: 2018/09/13 10:54:23 by obamzuro         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -80,7 +80,7 @@ typedef struct			s_lineeditor
 	char			letter[8];
 	int				curpos[2];
 	int				seek;
-	char			*buffer;
+	unsigned char	*buffer;
 	int				is_history_searched;
 	int				selected[2];
 	int				selectedmode;

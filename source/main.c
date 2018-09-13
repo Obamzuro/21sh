@@ -6,7 +6,7 @@
 /*   By: obamzuro <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/05/13 15:05:22 by obamzuro          #+#    #+#             */
-/*   Updated: 2018/09/12 21:26:05 by obamzuro         ###   ########.fr       */
+/*   Updated: 2018/09/13 11:05:32 by obamzuro         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -547,11 +547,16 @@ void				line_editing_backspace(t_lineeditor *lineeditor,
 	char	*temp;
 	int		buflen;
 	int		prevseek;
+	int		i;
 
 	if (lineeditor->seek)
 	{
-		buflen = ft_strlen(lineeditor->buffer) - 1;
-		prevseek = lineeditor->seek - 1;
+		prevseek = lineeditor->seek;
+		i = 1;
+		while (prevseek - i >= 0 &&
+				lineeditor->buffer[prevseek - i] >> 6 == 0b10)
+			++i;
+		buflen = ft_strlen(lineeditor->buffer) - i;
 		left_shift_cursor(lineeditor->seek, lineeditor, history);
 		if (lineeditor->curpos[0] < 0)
 		{
@@ -563,9 +568,9 @@ void				line_editing_backspace(t_lineeditor *lineeditor,
 		ft_printf("%s%s%s%s", tgetstr("le", 0), tgetstr("le", 0),
 				tgetstr("le", 0), tgetstr("cd", 0));
 		write(1, "$> ", 3);
-		lineeditor->buffer[prevseek] = 0;
+		lineeditor->buffer[prevseek - i] = 0;
 		temp = lineeditor->buffer;
-		lineeditor->buffer = ft_strjoin(lineeditor->buffer, lineeditor->buffer + prevseek + 1);
+		lineeditor->buffer = ft_strjoin(lineeditor->buffer, lineeditor->buffer + prevseek);
 		free(temp);
 		write_line(lineeditor);
 		lineeditor->seek += buflen;
