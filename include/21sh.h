@@ -6,7 +6,7 @@
 /*   By: obamzuro <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/07/04 11:35:30 by obamzuro          #+#    #+#             */
-/*   Updated: 2018/09/13 10:54:23 by obamzuro         ###   ########.fr       */
+/*   Updated: 2018/09/13 20:25:33 by obamzuro         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -94,13 +94,6 @@ typedef struct			s_initfd
 	int		fdout;
 }						t_initfd;
 
-typedef struct			s_shell
-{
-	char		**env;
-	t_initfd	initfd;
-	t_history	history;
-}						t_shell;
-
 typedef struct			s_border
 {
 	int		beg;
@@ -147,6 +140,15 @@ typedef struct			s_esc_corr
 
 volatile sig_atomic_t	g_sigint;
 
+typedef struct			s_shell
+{
+	char			**env;
+	t_initfd		initfd;
+	t_history		history;
+	t_lexer			*lexer;
+	t_lineeditor	lineeditor;
+}						t_shell;
+
 char					*msh_strjoin_char(const char *s1,
 		const char *s2, char c);
 char					*msh_strjoin_path(const char *s1, const char *s2);
@@ -175,11 +177,11 @@ void					change_termios(t_initfd *initfd, int canon);
 char					**init_operators(void);
 
 void				free_lexer(t_lexer *lexer);
-void				lexer_creating(char *command, t_lexer *lexer, t_shell *shell);
+void				lexer_creating(char *command, t_shell *shell);
 void				history_append(char *command, t_history *history);
 int						parse_ast(t_ast *ast, t_shell *shell, int needfork);
 t_ast				*create_separator_ast(t_lexer *lexer, int beg, int end, int level, t_shell *shell);
-char				*input_command(t_history *history);
+char				*input_command(t_shell *shell);
 int					free_ast(t_ast *ast);
 void				print_ast(t_ast *ast);
 int			handle_commands(char **args, char ***env);

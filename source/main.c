@@ -6,13 +6,16 @@
 /*   By: obamzuro <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/05/13 15:05:22 by obamzuro          #+#    #+#             */
-/*   Updated: 2018/09/13 11:05:32 by obamzuro         ###   ########.fr       */
+/*   Updated: 2018/09/13 20:57:28 by obamzuro         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "21sh.h"
 
 void				print_buffer(t_lineeditor *lineeditor, t_history *history);
+
+void				line_editing_left_notmove(t_lineeditor *lineeditor,
+		t_history *history);
 
 int			handle_commands(char **args,
 		char ***env)
@@ -127,9 +130,6 @@ static void	get_cursor_position(int cursorpos[2])
 //		return ;
 //	get_cursor_position2(cursorpos);
 }
-
-void				line_editing_left_notmove(t_lineeditor *lineeditor,
-		t_history *history);
 
 void				line_editing_left(t_lineeditor *lineeditor, t_history *history)
 {
@@ -556,7 +556,7 @@ void				line_editing_backspace(t_lineeditor *lineeditor,
 		while (prevseek - i >= 0 &&
 				lineeditor->buffer[prevseek - i] >> 6 == 0b10)
 			++i;
-		buflen = ft_strlen(lineeditor->buffer) - i;
+		buflen = ft_strlen(lineeditor->buffer);
 		left_shift_cursor(lineeditor->seek, lineeditor, history);
 		if (lineeditor->curpos[0] < 0)
 		{
@@ -573,7 +573,7 @@ void				line_editing_backspace(t_lineeditor *lineeditor,
 		lineeditor->buffer = ft_strjoin(lineeditor->buffer, lineeditor->buffer + prevseek);
 		free(temp);
 		write_line(lineeditor);
-		lineeditor->seek += buflen;
+		lineeditor->seek += buflen - i;
 		left_shift_cursor(buflen - prevseek, lineeditor, history);
 		ft_putstr(tgoto(tgetstr("cm", 0), lineeditor->curpos[1],
 				lineeditor->curpos[0]));
@@ -666,115 +666,6 @@ int					line_editing(t_lineeditor *lineeditor, t_history *history)
 	return (0);
 }
 
-//	char	*temp;
-//	int		i;
-//	int		buflen;
-//	int		curpos[2];
-//
-//	buflen = ft_strlen(lineeditor->buffer);
-//	if (ft_strequ(lineeditor->letter, LEFT))
-//	{
-//		get_cursor_position(curpos);
-//		line_editing_left(lineeditor);
-//		--(lineeditor->seek);
-//		return (1);
-//	}
-//	else if (ft_strequ(lineeditor->letter, RIGHT))
-//	{
-//		line_editing_right(lineeditor);
-//		return (1);
-//	}
-//	else if (ft_strequ(lineeditor->letter, BACKSPACE))
-//	{
-//		return (1);
-//	}
-//	else if (ft_strequ(lineeditor->letter, ALTLEFT))
-//	{
-//		return (1);
-//	}
-//	else if (ft_strequ(lineeditor->letter, ALTRIGHT))
-//	{
-//		line_editing_altright(lineeditor);
-//		return (1);
-//	}
-//	else if (ft_strequ(lineeditor->letter, HOME))
-//	{
-//		while (lineeditor->seek)
-//		{
-//			get_cursor_position(curpos);
-//			--(lineeditor->seek);
-//			line_editing_left(lineeditor);
-//		}
-//		return (1);
-//	}
-//	else if (ft_strequ(lineeditor->letter, END))
-//	{
-//		while (lineeditor->seek != buflen)
-//			line_editing_altdown(lineeditor);
-//		return (1);
-//	}
-//	else if (ft_strequ(lineeditor->letter, UP))
-//	{
-//	}
-//	else if (ft_strequ(lineeditor->letter, DOWN))
-//	{
-//		return (1);
-//	}
-//	else if (ft_strequ(lineeditor->letter, ESC))
-//	{
-//	}
-//	else if (ft_strequ(lineeditor->letter, ALTUP))
-//	{
-//		line_editing_altup(lineeditor);
-//		return (1);
-//	}
-//	else if (ft_strequ(lineeditor->letter, ALTDOWN))
-//	{
-//		line_editing_altdown(lineeditor);
-//		return (1);
-//	}
-//	else if (ft_strequ(lineeditor->letter, SHIFTLEFT))
-//	{
-//		return (1);
-//	}
-//	else if (ft_strequ(lineeditor->letter, SHIFTRIGHT))
-//	{
-//		if (lineeditor->seek)
-//		{
-//			lineeditor->selectedmode = 1;
-//			if (lineeditor->selected[1] == -1)
-//				lineeditor->selected[1] = lineeditor->seek;
-//			line_editing_right(lineeditor);
-//			left_shift_cursor(0, - lineeditor->seek, lineeditor);
-//			ft_putstr(tgetstr("le", 0));
-//			ft_putstr(tgetstr("le", 0));
-//			ft_putstr(tgetstr("le", 0));
-//			ft_putstr(tgetstr("cd", 0));
-//			write(1, "$> ", 3);
-//			lineeditor->selected[0] = lineeditor->seek;
-//			write_line(lineeditor);
-//			left_shift_cursor(lineeditor->buffer, lineeditor->seek, lineeditor);
-//		}
-//		return (1);
-//	}
-//	else if (ft_strequ(lineeditor->letter, ALTX))
-//	{
-//		line_editing_altx(lineeditor);
-//		return (1);
-//	}
-//	else if (ft_strequ(lineeditor->letter, ALTC))
-//	{
-//		line_editing_altc(lineeditor);
-//		return (1);
-//	}
-//	else if (ft_strequ(lineeditor->letter, ALTV))
-//	{
-//		line_editing_altv(lineeditor);
-//		return (1);
-//	}
-//	return (0);
-//}
-
 void				print_buffer_back(t_lineeditor *lineeditor, t_history *history)
 {
 	left_shift_cursor(lineeditor->seek, lineeditor, history);
@@ -788,8 +679,7 @@ void				print_buffer_back(t_lineeditor *lineeditor, t_history *history)
 }
 
 void				print_buffer_forw(t_lineeditor *lineeditor, t_history *history, int prevseek)
-{
-	ft_printf("%s%s%s%s", tgetstr("le", 0), tgetstr("le", 0),
+{ ft_printf("%s%s%s%s", tgetstr("le", 0), tgetstr("le", 0),
 			tgetstr("le", 0), tgetstr("cd", 0));
 	write(1, "$> ", 3);
 	write_line(lineeditor);
@@ -883,67 +773,70 @@ int					after_read_unicode(t_lineeditor *lineeditor)
 	return (1);
 }
 
-char				*input_command(t_history *history)
+char				*input_command(t_shell *shell)
 {
-	t_lineeditor	lineeditor;
+	t_lineeditor	*lineeditor;
 	char			*temp;
+	t_history		*history;
 
-	ft_bzero(&lineeditor, sizeof(lineeditor));
-	if (ioctl(0, TIOCGWINSZ, &lineeditor.ws) == -1)
+	history = &shell->history;
+	lineeditor = &shell->lineeditor;
+	ft_bzero(lineeditor, sizeof(t_lineeditor));
+	if (ioctl(0, TIOCGWINSZ, &lineeditor->ws) == -1)
 		return (NULL);
-	lineeditor.selected[0] = -1;
-	lineeditor.selected[1] = -1;
-	get_cursor_position(lineeditor.curpos);
-	--lineeditor.curpos[1];
-	--lineeditor.curpos[0];
+	lineeditor->selected[0] = -1;
+	lineeditor->selected[1] = -1;
+	get_cursor_position(lineeditor->curpos);
+	--lineeditor->curpos[1];
+	--lineeditor->curpos[0];
 	while (1)
 	{
-		ft_bzero(lineeditor.letter, sizeof(lineeditor.letter));
-		read(0, lineeditor.letter, 1);
-		after_read_unicode(&lineeditor);
-		if (line_editing(&lineeditor, history))
+		ft_bzero(lineeditor->letter, sizeof(lineeditor->letter));
+		read(0, lineeditor->letter, 1);
+		after_read_unicode(lineeditor);
+		if (line_editing(lineeditor, history))
 		{
-			if (ft_strequ(lineeditor.letter, BACKSPACE) && lineeditor.is_history_searched)
+			if (ft_strequ(lineeditor->letter, BACKSPACE) && lineeditor->is_history_searched)
 			{
 				--history->last;
 				free(history->commands[history->last]);
 				history->commands[history->last] = 0;
-				lineeditor.is_history_searched = 0;
+				lineeditor->is_history_searched = 0;
 				history->current = history->last;
 			}
 			continue ;
 		}
-		if (lineeditor.is_history_searched)
+		if (lineeditor->is_history_searched)
 		{
 			--history->last;
 			free(history->commands[history->last]);
 			history->commands[history->last] = 0;
-			lineeditor.is_history_searched = 0;
+			lineeditor->is_history_searched = 0;
 			history->current = history->last;
 		}
-		if (ft_strequ(lineeditor.letter, "\n"))
+		if (ft_strequ(lineeditor->letter, "\n"))
 		{
-			write(1, lineeditor.letter, sizeof(lineeditor.letter));
+//			write(1, lineeditor->letter, sizeof(lineeditor->letter));
 			break ;
 		}
-		temp = lineeditor.buffer;
+		temp = lineeditor->buffer;
 //		write(1, lineeditor.letter, sizeof(lineeditor.letter));
-		if (lineeditor.seek != ft_strlen(lineeditor.buffer))
+		if (lineeditor->seek != ft_strlen(lineeditor->buffer))
 		{
 //			write(1, lineeditor.buffer + lineeditor.seek, ft_strlen(lineeditor.buffer) - lineeditor.seek);
 //			left_shift_cursor(lineeditor.buffer, lineeditor.seek);
-			lineeditor.buffer = ft_strjoin_inner(lineeditor.buffer, lineeditor.letter, lineeditor.seek);
+			lineeditor->buffer = ft_strjoin_inner(lineeditor->buffer, lineeditor->letter, lineeditor->seek);
 		}
 		else
-  			lineeditor.buffer = ft_strjoin(lineeditor.buffer, lineeditor.letter);
+  			lineeditor->buffer = ft_strjoin(lineeditor->buffer, lineeditor->letter);
 //		ft_putstr(tgoto(tgetstr("cm", 0), lineeditor.cursorpos[1] - 1, lineeditor.cursorpos[0] - 1));
 		free(temp);
-		print_buffer_2(&lineeditor, history);
+		print_buffer_2(lineeditor, history);
 //		++lineeditor.seek;
 //		++lineeditor.curpos[1];
 	}
-	free(lineeditor.cpbuf);
-	return (lineeditor.buffer);
+	free(lineeditor->cpbuf);
+	return (lineeditor->buffer);
 }
 
 int					winch_handler(int sig)
@@ -962,6 +855,7 @@ void				preparation(t_shell *shell)
 	shell->initfd.fdin = dup(0);
 	shell->initfd.fdout = dup(1);
 	shell->env = fill_env();
+	shell->lexer = (t_lexer *)malloc(sizeof(t_lexer));
 	ft_bzero(&shell->history, sizeof(shell->history));
 //	iignal(SIGWINCH, winch_handler);
 	//signal(SIGINT, int_handler);
@@ -1008,7 +902,7 @@ void				line_editing_altx(t_lineeditor *lineeditor,
 int					main(void)
 {
 	char		*command;
-	t_lexer		lexer;
+//	t_lexer		lexer;
 	t_ast		*ast;
 	t_shell		shell;
 
@@ -1016,19 +910,20 @@ int					main(void)
 	while (1)
 	{
 		change_termios(&shell.initfd, 0);
-		ft_bzero(&lexer, sizeof(t_lexer));
+		ft_bzero(shell.lexer, sizeof(t_lexer));
 		ft_printf("$> ");
-		if (!(command = input_command(&shell.history)))
+		if (!(command = input_command(&shell)) && write(1, "\n", 1))
 			continue ;
-		lexer_creating(command, &lexer, &shell);
-		if (!lexer.tokens.len)
+		lexer_creating(command, &shell);
+		write(1, "\n", 1);
+		if (!shell.lexer->tokens.len)
 		{
-			free_lexer(&lexer);
+			free_lexer(shell.lexer);
 			free(shell.history.commands[shell.history.last]);
 			shell.history.commands[shell.history.last] = 0;
 			continue ;
 		}
-		if (!(ast = create_separator_ast(&lexer, 0, lexer.tokens.len - 1, 0, &shell)))
+		if (!(ast = create_separator_ast(shell.lexer, 0, shell.lexer->tokens.len - 1, 0, &shell)))
 		{
 			--shell.history.last;
 			free(shell.history.commands[shell.history.last]);
@@ -1043,11 +938,12 @@ int					main(void)
 		print_ast(ast);
 		change_termios(&shell.initfd, 1);
 		parse_ast(ast, &shell, 1);
-		free_lexer(&lexer);
+		free_lexer(shell.lexer);
 		free_ast(ast);
-//		system("leaks -quiet 21sh");
+		system("leaks -quiet 21sh");
 	}
 	free_double_arr(shell.env);
+	free(shell.lexer);
 	//TODO: close shell->initfd
 	return (0);
 }

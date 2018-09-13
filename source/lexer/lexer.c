@@ -65,8 +65,8 @@ t_token				*lexing_init_operator_token(char buf, t_token *token, t_lexer *lexer)
 	return (token);
 }
 
-t_token				*lexing_handling_quotes(t_lexer *lexer, t_token *token, char **last,
-		char **command, t_shell *shell)
+t_token				*lexing_handling_quotes(t_shell *shell, t_token *token, char **last,
+		char **command)
 {
 	char	delim;
 	char	*temp;
@@ -87,8 +87,9 @@ t_token				*lexing_handling_quotes(t_lexer *lexer, t_token *token, char **last,
 			history_append(*command, &shell->history);
 			history_append("\n", &shell->history);
 			free(*command);
-			ft_putstr("$> ");
-			*command = input_command(&shell->history);
+			line_editing_end(&shell->lineeditor, &shell->history);
+			ft_putstr("\n$> ");
+			*command = input_command(shell);
 			*last = *command - 1;
 			continue ;
 		}
@@ -208,8 +209,8 @@ void				tilde_expansion(t_ftvector *line)
 	}
 }
 
-void				lexer_creating_cycle(char **command, t_lexer *lexer,
-		t_token *token, char *last, t_shell *shell)
+void				lexer_creating_cycle(char **command, t_shell *shell,
+		t_token *token, char *last)
 {
 	while (1)
 	{
@@ -218,19 +219,19 @@ void				lexer_creating_cycle(char **command, t_lexer *lexer,
 		{
 			if (lexing_try_append_operator(*last, &token->str))
 				continue ;
-			token = lexing_divide_operator(lexer, token);
+			token = lexing_divide_operator(shell->lexer, token);
 		}
 		if (lexing_is_operator_begin(*last))
 		{
-			token = lexing_init_operator_token(*last, token, lexer);
+			token = lexing_init_operator_token(*last, token, shell->lexer);
 			continue ;
 		}
 		else if ('\"' == *last || '\'' == *last)
-			token = lexing_handling_quotes(lexer, token, &last, command, shell);
-		else if (!*last && lexing_handling_end(lexer, token))
+			token = lexing_handling_quotes(shell, token, &last, command);
+		else if (!*last && lexing_handling_end(shell->lexer, token))
 			break ;
 		else if (ft_strchr(" \t", *last))
-			token = lexing_handling_separator(lexer, token);
+			token = lexing_handling_separator(shell->lexer, token);
 		else if (token && token->type == UKNOWN)
 			lexing_handling_appword(token, *last);
 		else
@@ -238,15 +239,15 @@ void				lexer_creating_cycle(char **command, t_lexer *lexer,
 	}
 }
 
-void				lexer_creating(char *command, t_lexer *lexer, t_shell *shell)
+void				lexer_creating(char *command, t_shell *shell)
 {
 	t_token		*token;
 	char		*last;
 
 	token = NULL;
 	last = command - 1;
-	init_ftvector(&lexer->tokens);
-	lexer_creating_cycle(&command, lexer, token, last, shell);
+	init_ftvector(&shell->lexer->tokens);
+	lexer_creating_cycle(&command, shell, token, last);
 //	lexing_print(lexer);
 	history_append(command, &shell->history);
 	free(command);
