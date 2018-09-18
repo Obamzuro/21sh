@@ -6,7 +6,7 @@
 /*   By: obamzuro <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/06/09 14:25:20 by obamzuro          #+#    #+#             */
-/*   Updated: 2018/09/01 13:03:57 by obamzuro         ###   ########.fr       */
+/*   Updated: 2018/09/17 21:32:11 by obamzuro         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -36,27 +36,34 @@ void	term_associate(void)
 	}
 }
 
+struct termios		g_tty;
+
 void	change_termios(t_initfd *initfd, int canon)
 {
 	struct termios		tty;
 
+	(void)initfd;
 	if (!canon)
 	{
-		if (!isatty(initfd->fdin))
+//		if (!isatty(initfd->fdin))
+		if (!isatty(0))
 		{
 			ft_fprintf(2, "21sh: stdin isn't terminal\n");
 			exit(EXIT_FAILURE);
 		}
-		tcgetattr(initfd->fdout, &tty);
+		(initfd->fdin == -1) ? dup2(initfd->fdin, 0) : 0;
+		(initfd->fdout == -1) ? dup2(initfd->fdout, 1) : 0;
+		(initfd->fderr == -1) ? dup2(initfd->fderr, 2) : 0;
+		tcgetattr(0, &tty);
 		tty.c_lflag &= ~(ICANON | ECHO);
 		tty.c_cc[VMIN] = 1;
 		tty.c_cc[VTIME] = 0;
-		tcsetattr(initfd->fdout, TCSANOW, &tty);
+		tcsetattr(0, TCSANOW, &tty);
 	}
 	else
 	{
-		tcgetattr(initfd->fdout, &tty);
-		tty.c_lflag |= (ICANON | ECHO);
-		tcsetattr(initfd->fdout, TCSANOW, &tty);
+//		tcgetattr(0, &tty);
+//		tty.c_lflag |= (ICANON | ECHO);
+		tcsetattr(0, TCSANOW, &g_tty);
 	}
 }

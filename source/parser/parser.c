@@ -86,27 +86,18 @@ int						parse_ast_pipe(t_ast *ast, t_shell *shell)
 int						parse_ast_command(t_ast *ast, t_shell *shell,
 		int needfork)
 {
-	char	**args;
-
-	args = ft_strsplit(ast->content, ' ');
-	if (!handle_commands(args, &shell->env))
+	if (!handle_commands(ast->content, &shell->env))
 	{
 		if (needfork)
 		{
-			if (ft_exec(args, &shell->env, 1) == -1)
-			{
-				free_double_arr(args);
+			if (ft_exec(ast->content, &shell->env, 1) == -1)
 				return (0);
-			}
-			wait(0);
+			while (wait(0) == -1)
+				;
 		}
-		else if (ft_exec(args, &shell->env, 0) == -1)
-		{
-			free_double_arr(args);
+		else if (ft_exec(ast->content, &shell->env, 0) == -1)
 			return (0);
-		}
 	}
-	free_double_arr(args);
 	return (1);
 }
 
@@ -133,10 +124,9 @@ int						parse_ast_redirection_right(t_ast *ast)
 	return (rightfd);
 }
 
-int						parse_ast_redirection_kernel_heredoc(t_ast *ast, t_shell *shell, int fd)
+int						parse_ast_redirection_kernel_heredoc(t_ast *ast, int fd)
 {
 	int		pipefd[2];
-	int		oldfd;
 
 	if (pipe(pipefd) == -1)
 	{
@@ -161,7 +151,7 @@ int						parse_ast_redirection_kernel(t_ast *ast, t_shell *shell,
 		close(fd);
 	else if (ft_strequ(ast->content, "<<"))
 	{
-		if (!parse_ast_redirection_kernel_heredoc(ast, shell, fd))
+		if (!parse_ast_redirection_kernel_heredoc(ast, fd))
 			return (0);
 	}
 	else
@@ -214,7 +204,8 @@ int						parse_ast_redirection(t_ast *ast, t_shell *shell,
 				exit(1);
 		}
 		else if (needfork)
-			wait(0);
+			while (wait(0) == -1)
+				;
 		return (1);
 	}
 	if (!parse_ast_redirection_child(ast, shell))

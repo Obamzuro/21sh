@@ -65,6 +65,16 @@ t_token				*lexing_init_operator_token(char buf, t_token *token, t_lexer *lexer)
 	return (token);
 }
 
+int					lexing_handling_appword(t_token *token, char buf)
+{
+	char	*temp;
+
+	temp = ft_chrjoin(token->str, buf);
+	free(token->str);
+	token->str = temp;
+	return (0);
+}
+
 t_token				*lexing_handling_quotes(t_shell *shell, t_token *token, char **last,
 		char **command)
 {
@@ -72,24 +82,26 @@ t_token				*lexing_handling_quotes(t_shell *shell, t_token *token, char **last,
 	char	*temp;
 
 	delim = **last;
+	if (!token)
+		token = (t_token *)ft_memalloc(sizeof(t_token));
+	lexing_handling_appword(token, delim);
 	while (1)
 	{
 		++(*last);
-		if (**last == delim)
+		if (**last == delim && !lexing_handling_appword(token, delim))
 			break ;
-		if (!token)
-			token = (t_token *)ft_memalloc(sizeof(t_token));
 		if (!**last)
 		{
 			temp = ft_chrjoin(token->str, '\n');
 			free(token->str);
 			token->str = temp;
-			history_append(*command, &shell->history);
-			history_append("\n", &shell->history);
 			free(*command);
 			line_editing_end(&shell->lineeditor, &shell->history);
-			ft_putstr("\n$> ");
-			*command = input_command(shell);
+			ft_putstr("\nq> ");
+			if (!(*command = input_command(&shell->lineeditor, &shell->history, 'q')) && ft_printf("\n"))
+				return (NULL);
+			history_append("\n", &shell->history, 1);
+			history_append(*command, &shell->history, 1);
 			*last = *command - 1;
 			continue ;
 		}
@@ -122,15 +134,6 @@ t_token				*lexing_handling_separator(t_lexer *lexer, t_token *token)
 	return (token);
 }
 
-void				lexing_handling_appword(t_token *token, char buf)
-{
-	char	*temp;
-
-	temp = ft_chrjoin(token->str, buf);
-	free(token->str);
-	token->str = temp;
-}
-
 t_token				*lexing_handling_initword(t_token *token, char buf)
 {
 	token = (t_token *)malloc(sizeof(t_token));
@@ -154,62 +157,7 @@ void				lexing_print(t_lexer *lexer)
 	ft_printf("\n");
 }
 
-void				tilde_expansion(t_ftvector *line)
-{
-	int				i;
-	char			*slash;
-	char			*temp;
-	char			*temp2;
-	struct stat		mystat;
-
-	i = -1;
-	while (line->elem[++i])
-	{
-		if (((char *)(line->elem[i]))[0] == '~')
-		{
-			if (((char *)(line->elem[i]))[1] == '/')
-			{
-				temp = ft_strjoin(getenv("HOME"), line->elem[i] + 1);
-				free(line->elem[i]);
-				line->elem[i] = temp;
-			}
-			else
-			{
-				slash = ft_strchr(line->elem[i] + 1, '/');
-				if (slash)
-				{
-					*slash = 0;
-					temp = ft_strjoin("/Users/", line->elem[i] + 1);
-					if (lstat(temp, &mystat) != -1)
-					{
-						temp2 = ft_strjoin_path(temp, slash + 1);
-						free(temp);
-						free(line->elem[i]);
-						line->elem[i] = temp2;
-					}
-					else
-					{
-						ft_fprintf(2, "21sh: no such user or named directory: %s", line->elem[i] + 1);
-						*slash = '/';
-					}
-				}
-				else
-				{
-					temp = ft_strjoin("/Users/", line->elem[i] + 1);
-					if (lstat(temp, &mystat) != -1)
-					{
-						line->elem[i] = temp;
-						free(line->elem[i]);
-					}
-					else
-						ft_fprintf(2, "21sh: no such user or named directory: %s", line->elem[i] + 1);
-				}
-			}
-		}
-	}
-}
-
-void				lexer_creating_cycle(char **command, t_shell *shell,
+int					lexer_creating_cycle(char **command, t_shell *shell,
 		t_token *token, char *last)
 {
 	while (1)
@@ -227,7 +175,10 @@ void				lexer_creating_cycle(char **command, t_shell *shell,
 			continue ;
 		}
 		else if ('\"' == *last || '\'' == *last)
-			token = lexing_handling_quotes(shell, token, &last, command);
+		{
+			if (!(token = lexing_handling_quotes(shell, token, &last, command)))
+				return (-1);
+		}
 		else if (!*last && lexing_handling_end(shell->lexer, token))
 			break ;
 		else if (ft_strchr(" \t", *last))
@@ -237,9 +188,10 @@ void				lexer_creating_cycle(char **command, t_shell *shell,
 		else
 			token = lexing_handling_initword(token, *last);
 	}
+	return (0);
 }
 
-void				lexer_creating(char *command, t_shell *shell)
+int					lexer_creating(char *command, t_shell *shell)
 {
 	t_token		*token;
 	char		*last;
@@ -247,10 +199,11 @@ void				lexer_creating(char *command, t_shell *shell)
 	token = NULL;
 	last = command - 1;
 	init_ftvector(&shell->lexer->tokens);
-	lexer_creating_cycle(&command, shell, token, last);
-//	lexing_print(lexer);
-	history_append(command, &shell->history);
+	history_append(command, &shell->history, 0);
+	if (lexer_creating_cycle(&command, shell, token, last))
+		return (-1);
 	free(command);
+	return (0);
 }
 
 void				free_lexer(t_lexer *lexer)

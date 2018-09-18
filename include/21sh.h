@@ -6,7 +6,7 @@
 /*   By: obamzuro <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/07/04 11:35:30 by obamzuro          #+#    #+#             */
-/*   Updated: 2018/09/13 20:25:33 by obamzuro         ###   ########.fr       */
+/*   Updated: 2018/09/18 10:44:57 by obamzuro         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,6 +21,7 @@
 # include <sys/stat.h>
 # include <sys/types.h>
 # include <sys/ioctl.h>
+# include <errno.h>
 # include "libft.h"
 # include "ft_printf.h"
 
@@ -30,7 +31,8 @@
 # define AM_SEPARATOROP 2
 # define AM_IOFILEOP 7
 # define AM_HISTORY 5
-# define AM_ESC 17
+# define AM_ESC 19
+# define AM_ASCII_IGNORE 2
 
 # define ESC "\x1B"
 # define DOWN "\x1B[B"
@@ -55,6 +57,8 @@
 # define ALTC "\xc3\xa7"
 # define ALTV "\xe2\x88\x9a"
 # define ALTQ "\xc5\x93"
+//# define DEL "\x7F"
+# define EOT "\x4"
 
 typedef enum			e_tokentype
 {
@@ -80,18 +84,20 @@ typedef struct			s_lineeditor
 	char			letter[8];
 	int				curpos[2];
 	int				seek;
-	unsigned char	*buffer;
+	char	*buffer;
 	int				is_history_searched;
 	int				selected[2];
 	int				selectedmode;
 	char			*cpbuf;
 	struct winsize	ws;
+	char			prompt;
 }						t_lineeditor;
 
 typedef struct			s_initfd
 {
 	int		fdin;
 	int		fdout;
+	int		fderr;
 }						t_initfd;
 
 typedef struct			s_border
@@ -135,7 +141,6 @@ typedef struct			s_esc_corr
 {
 	char	*str;
 	void	(*func)(t_lineeditor *, t_history *);
-	int		ret : 1;
 }						t_esc_corr;
 
 volatile sig_atomic_t	g_sigint;
@@ -147,6 +152,7 @@ typedef struct			s_shell
 	t_history		history;
 	t_lexer			*lexer;
 	t_lineeditor	lineeditor;
+	t_ast			*ast;
 }						t_shell;
 
 char					*msh_strjoin_char(const char *s1,
@@ -155,7 +161,7 @@ char					*msh_strjoin_path(const char *s1, const char *s2);
 
 char					**fill_env(void);
 void					fill_commands(t_comm_corr *commands);
-void					replace_env_variable(char **args, char **env);
+int						env_expansion(t_shell *shell);
 
 void					change_dir(char **args, char ***env);
 void					ft_echo(char **args, char ***env);
@@ -177,11 +183,11 @@ void					change_termios(t_initfd *initfd, int canon);
 char					**init_operators(void);
 
 void				free_lexer(t_lexer *lexer);
-void				lexer_creating(char *command, t_shell *shell);
-void				history_append(char *command, t_history *history);
+int					lexer_creating(char *command, t_shell *shell);
+void				history_append(char *command, t_history *history, int appendmode);
 int						parse_ast(t_ast *ast, t_shell *shell, int needfork);
 t_ast				*create_separator_ast(t_lexer *lexer, int beg, int end, int level, t_shell *shell);
-char				*input_command(t_shell *shell);
+char				*input_command(t_lineeditor *lineeditor, t_history *history, char prompt);
 int					free_ast(t_ast *ast);
 void				print_ast(t_ast *ast);
 int			handle_commands(char **args, char ***env);
@@ -203,6 +209,8 @@ void				line_editing_altc(t_lineeditor *lineeditor, t_history *history);
 void				line_editing_altv(t_lineeditor *lineeditor, t_history *history);
 void				line_editing_altx(t_lineeditor *lineeditor, t_history *history);
 void				line_editing_help(t_lineeditor *lineeditor, t_history *history);
+void				line_editing_del(t_lineeditor *lineeditor, t_history *history);
+void				line_editing_eot(t_lineeditor *lineeditor, t_history *history);
 
 void				left_shift_cursor(int amount, t_lineeditor *lineeditor, t_history *history);
 void				write_line(t_lineeditor *lineeditor);

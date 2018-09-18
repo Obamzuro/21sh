@@ -6,7 +6,7 @@
 #    By: obamzuro <marvin@42.fr>                    +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2018/05/11 15:56:03 by obamzuro          #+#    #+#              #
-#    Updated: 2018/09/08 16:18:30 by obamzuro         ###   ########.fr        #
+#    Updated: 2018/09/17 14:40:12 by obamzuro         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -30,7 +30,7 @@ SRCNAME = main.c		\
 		  lexer/lexer.c\
 		  parser/parser.c
 
-FLAGS = -g 
+FLAGS = -g -Wall -Wextra -Werror
 
 SRC = $(addprefix source/, $(SRCNAME))
 

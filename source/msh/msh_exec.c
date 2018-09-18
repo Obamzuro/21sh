@@ -6,7 +6,7 @@
 /*   By: obamzuro <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/05/19 13:52:33 by obamzuro          #+#    #+#             */
-/*   Updated: 2018/08/31 21:41:48 by obamzuro         ###   ########.fr       */
+/*   Updated: 2018/09/17 14:50:06 by obamzuro         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -109,20 +109,12 @@ static int		ft_exec_fork(char **args, char ***env, char *comm)
 int				ft_exec(char **args, char ***env, int forkneed)
 {
 	char		*comm;
-	char		*temp;
 	int			ret;
 
 	if (!ft_strchr(args[0], '/'))
 		comm = ft_exec_path(args, env);
 	else
 	{
-		//TODO: tilde expansion
-//		if (args[0] && args[0][0] == '~')
-//		{
-//			temp = ft_strjoin(get_env("HOME", *env), args[0] + 1);
-//			free(args[0]);
-//			args[0] = temp;
-//		}
 		comm = args[0];
 	}
 	if (ft_exec_check_err(args, comm) == -1)
@@ -131,7 +123,6 @@ int				ft_exec(char **args, char ***env, int forkneed)
 		ret = ft_exec_fork(args, env, comm);
 	else if ((ret = execve(comm, args, *env) == -1))
 		ft_fprintf(2, "21sh: File execution error: %s\n", comm);
-	// TODO: can "free" make problems for child process?
 	if (comm != args[0])
 		free(comm);
 	return (ret);

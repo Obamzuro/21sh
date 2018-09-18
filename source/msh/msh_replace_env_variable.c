@@ -6,24 +6,24 @@
 /*   By: obamzuro <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/05/23 12:24:29 by obamzuro          #+#    #+#             */
-/*   Updated: 2018/08/27 17:08:51 by obamzuro         ###   ########.fr       */
+/*   Updated: 2018/09/17 14:40:51 by obamzuro         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "21sh.h"
 
-static int			replace_env_variable_repl_end(char **args,
+static int			replace_env_variable_repl_end(t_token **tokens,
 		char **env, int i, int *j)
 {
 	char	*temp;
 
-	temp = args[i];
-	args[i] = ft_strjoin(temp, get_env(args[i] + *j + 1, env));
+	temp = tokens[i]->str;
+	tokens[i]->str = ft_strjoin(temp, get_env(tokens[i]->str + *j + 1, env));
 	free(temp);
 	return (1);
 }
 
-static int			replace_env_variable_repl(char **args, char **env,
+static int			replace_env_variable_repl(t_token **tokens, char **env,
 		int i, int *j)
 {
 	char	*temp;
@@ -31,52 +31,53 @@ static int			replace_env_variable_repl(char **args, char **env,
 	char	*foundstable;
 
 	temp = 0;
-	args[i][*j] = 0;
-	foundstable = ft_strchr(args[i] + *j + 1, '$');
-	if (!foundstable && replace_env_variable_repl_end(args, env, i, j))
+	tokens[i]->str[*j] = 0;
+	foundstable = ft_strchr(tokens[i]->str + *j + 1, '$');
+	if (!foundstable && replace_env_variable_repl_end(tokens, env, i, j))
 		return (1);
 	else
 	{
-		temp = ft_strsub(args[i], *j + 1, foundstable - args[i] - *j - 1);
+		temp = ft_strsub(tokens[i]->str, *j + 1,
+				foundstable - tokens[i]->str - *j - 1);
 		temp2 = get_env(temp, env);
 		*j += ft_strlen(temp2);
 		free(temp);
-		temp = args[i];
-		args[i] = ft_strjoin(temp, temp2);
+		temp = tokens[i]->str;
+		tokens[i]->str = ft_strjoin(temp, temp2);
 		temp2 = ft_strdup(foundstable);
 		free(temp);
-		temp = args[i];
-		args[i] = ft_strjoin(temp, temp2);
+		temp = tokens[i]->str;
+		tokens[i]->str = ft_strjoin(temp, temp2);
 		free(temp);
 		free(temp2);
 	}
 	return (0);
 }
 
-void				replace_env_variable(char **args, char **env)
+int					env_expansion(t_shell *shell)
 {
 	int		i;
 	int		j;
+	t_token	**tokens;
 
-	i = 0;
-	while (args[++i])
+	i = -1;
+	tokens = (t_token **)shell->lexer->tokens.elem;
+	while (++i < shell->lexer->tokens.len)
 	{
 		j = 0;
-		while (args[i][j])
-		{
-			if (args[i][j] == '$')
+		while (tokens[i]->str[j])
+			if (tokens[i]->str[j] == '$')
 			{
-				if (args[i][j + 1] == '$' || !args[i][j + 1])
+				if (tokens[i]->str[j + 1] == '$' || !tokens[i]->str[j + 1])
 				{
 					++j;
 					continue ;
 				}
-				else if (replace_env_variable_repl(args, env, i, &j))
+				else if (replace_env_variable_repl(tokens, shell->env, i, &j))
 					break ;
 			}
 			else
 				++j;
-		}
 	}
-	return ;
+	return (0);
 }

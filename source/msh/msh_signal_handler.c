@@ -6,7 +6,7 @@
 /*   By: obamzuro <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/05/19 13:53:06 by obamzuro          #+#    #+#             */
-/*   Updated: 2018/05/19 13:53:07 by obamzuro         ###   ########.fr       */
+/*   Updated: 2018/09/17 14:50:17 by obamzuro         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,12 +14,5 @@
 
 void		int_handler(int sig)
 {
-	if (sig == SIGINT)
-	{
-		signal(SIGINT, int_handler);
-		if (g_sigint == 0)
-			write(1, "\n$> ", 4);
-		else
-			write(1, "\n", 1);
-	}
+	(void)sig;
 }
