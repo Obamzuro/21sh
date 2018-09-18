@@ -6,7 +6,7 @@
 /*   By: obamzuro <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/05/19 13:52:29 by obamzuro          #+#    #+#             */
-/*   Updated: 2018/05/23 15:03:50 by obamzuro         ###   ########.fr       */
+/*   Updated: 2018/09/18 18:17:12 by obamzuro         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,6 +20,8 @@ void			ft_echo(char **args, char ***env)
 	i = 1;
 	first = 0;
 	++env;
+	if (ft_strequ(args[1], "-n"))
+		++i;
 	while (args[i])
 	{
 		if (!first)
@@ -31,6 +33,7 @@ void			ft_echo(char **args, char ***env)
 			ft_printf(" %s", args[i]);
 		++i;
 	}
-	ft_printf("\n");
+	if (!ft_strequ(args[1], "-n"))
+		ft_printf("\n");
 	return ;
 }

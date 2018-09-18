@@ -6,7 +6,7 @@
 /*   By: obamzuro <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/05/23 12:24:29 by obamzuro          #+#    #+#             */
-/*   Updated: 2018/09/17 14:40:51 by obamzuro         ###   ########.fr       */
+/*   Updated: 2018/09/18 18:32:16 by obamzuro         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,8 +17,9 @@ static int			replace_env_variable_repl_end(t_token **tokens,
 {
 	char	*temp;
 
+	(void)env;
 	temp = tokens[i]->str;
-	tokens[i]->str = ft_strjoin(temp, get_env(tokens[i]->str + *j + 1, env));
+	tokens[i]->str = ft_strjoin(temp, getenv(tokens[i]->str + *j + 1));
 	free(temp);
 	return (1);
 }
@@ -32,14 +33,14 @@ static int			replace_env_variable_repl(t_token **tokens, char **env,
 
 	temp = 0;
 	tokens[i]->str[*j] = 0;
-	foundstable = ft_strchr(tokens[i]->str + *j + 1, '$');
+	foundstable = ft_strchr_str(tokens[i]->str + *j + 1, "$\'\"");
 	if (!foundstable && replace_env_variable_repl_end(tokens, env, i, j))
 		return (1);
 	else
 	{
 		temp = ft_strsub(tokens[i]->str, *j + 1,
 				foundstable - tokens[i]->str - *j - 1);
-		temp2 = get_env(temp, env);
+		temp2 = getenv(temp);
 		*j += ft_strlen(temp2);
 		free(temp);
 		temp = tokens[i]->str;
@@ -59,16 +60,24 @@ int					env_expansion(t_shell *shell)
 	int		i;
 	int		j;
 	t_token	**tokens;
+	int		squotemode;
 
 	i = -1;
+	squotemode = 0;
 	tokens = (t_token **)shell->lexer->tokens.elem;
 	while (++i < shell->lexer->tokens.len)
 	{
 		j = 0;
 		while (tokens[i]->str[j])
-			if (tokens[i]->str[j] == '$')
+			if (tokens[i]->str[j] == '\'')
 			{
-				if (tokens[i]->str[j + 1] == '$' || !tokens[i]->str[j + 1])
+				squotemode = !squotemode;
+				++j;
+			}
+			else if (!squotemode && tokens[i]->str[j] == '$')
+			{
+				if (ft_is_char_in_str(tokens[i]->str[j + 1], "$\'\"")
+							|| !tokens[i]->str[j + 1])
 				{
 					++j;
 					continue ;

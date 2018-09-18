@@ -6,7 +6,7 @@
 /*   By: obamzuro <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/05/13 15:05:22 by obamzuro          #+#    #+#             */
-/*   Updated: 2018/09/18 13:47:29 by obamzuro         ###   ########.fr       */
+/*   Updated: 2018/09/18 18:30:20 by obamzuro         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -204,10 +204,14 @@ void				write_line_chcurpos(t_lineeditor *lineeditor)
 	while (str && *str)
 	{
 		if (str != lineeditor->buffer)
-			(!(lineeditor->curpos[1] = 0) &&
-			++lineeditor->curpos[0]);
+		{
+			lineeditor->curpos[1] = 0;
+			++lineeditor->curpos[0];
+			++str;
+		}
 		linewidth = lineeditor->curpos[1] + ft_uccount(str, '\n');
-		if (linewidth % lineeditor->ws.ws_col == 0)
+		if (!(linewidth % lineeditor->ws.ws_col) &&
+			!(str[-1] == '\n' && !*str))
 		{
 			--lineeditor->curpos[0];
 			lineeditor->curpos[1] = lineeditor->ws.ws_col;
@@ -220,7 +224,6 @@ void				write_line_chcurpos(t_lineeditor *lineeditor)
 		str += ft_ccount(str, '\n');
 		if (!*str)
 			break ;
-		++str;
 	}
 }
 
@@ -257,6 +260,8 @@ void				left_shift_cursor(int amount, t_lineeditor *lineeditor,
 	int				i;
 	int				seek;
 
+	if (!amount)
+		return ;
 	i = 0;
 	while (i < amount)
 	{
@@ -696,25 +701,28 @@ void				preparation(t_shell *shell)
 //	sigemptyset(&act.sa_mask);
 //	act.sa_mask |= SA_INTERRUPT;
 	term_associate();
+	signal(SIGTSTP, SIG_IGN);
+	signal(SIGQUIT, SIG_IGN);
+	signal(SIGSTOP, SIG_IGN);
 //	signal(SIGWINCH, winch_handler);
 //	signal(SIGINT, int_handler);
-//	if ((shell->initfd.fdin = dup(0)) == -1)
-//	{
-//		write(1, "0", 1);
-//		ft_fprintf(2, "21sh: stdin isn't terminal\n");
-//		exit(EXIT_FAILURE);
-//	}
-//	if ((shell->initfd.fdout = dup(1)) == -1)
-//	{
-//		write(2, "1", 1);
-//		shell->initfd.fdout = -1;
-//	}
+	if ((shell->initfd.fdin = dup(0)) == -1)
+	{
+		write(1, "0", 1);
+		ft_fprintf(2, "21sh: stdin isn't terminal\n");
+		exit(EXIT_FAILURE);
+	}
+	if ((shell->initfd.fdout = dup(1)) == -1)
+	{
+		write(2, "1", 1);
+		shell->initfd.fdout = -1;
+	}
 	if ((shell->initfd.fderr = dup(2)) == -1)
 	{
 		write(1, "2", 1);
 		shell->initfd.fderr = -1;
 	}
-	dup(0);
+//	dup(0);
 	shell->env = fill_env();
 	shell->lexer = (t_lexer *)malloc(sizeof(t_lexer));
 	ft_bzero(&shell->history, sizeof(shell->history));
@@ -794,6 +802,34 @@ int					tilde_expansion(t_shell *shell)
 	return (0);
 }
 
+int					quote_removing(t_shell *shell)
+{
+	t_token		**tokens;
+	int			i;
+	int			j;
+	char		*temp;
+
+	tokens = (t_token **)shell->lexer->tokens.elem;
+	i = -1;
+	while (++i < shell->lexer->tokens.len)
+	{
+		j = 0;
+		while (tokens[i]->str[j])
+		{
+			if (ft_is_char_in_str(tokens[i]->str[j], "\'\""))
+			{
+				tokens[i]->str[j] = 0;
+				temp = ft_strjoin(tokens[i]->str, tokens[i]->str + j + 1);
+				free(tokens[i]->str);
+				tokens[i]->str = temp;
+			}
+			else
+				++j;
+		}
+	}
+	return (0);
+}
+
 int					main(void)
 {
 	char		*command;
@@ -814,6 +850,8 @@ int					main(void)
 		if (tilde_expansion(&shell))
 			continue ;
 		if (env_expansion(&shell))
+			continue ;
+		if (quote_removing(&shell))
 			continue ;
 		write(1, "\n", 1);
 		if (!shell.lexer->tokens.len)
