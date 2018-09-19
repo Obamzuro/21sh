@@ -78,8 +78,10 @@ int						parse_ast_pipe(t_ast *ast, t_shell *shell)
 	}
 	close(fdpipe[0]);
 	close(fdpipe[1]);
-	waitpid(pid[0], 0, 0);
-	waitpid(pid[1], 0, 0);
+	while (waitpid(pid[0], 0, 0) == -1)
+		;
+	while (waitpid(pid[1], 0, 0) == -1)
+		;
 	return (1);
 }
 

@@ -84,7 +84,7 @@ t_ast				*create_command(t_lexer *lexer, int beg, int end)
 	return (ast);
 }
 
-void				create_redirection_ast_content_heredoc(t_ast *ast, t_shell *shell)
+int					create_redirection_ast_content_heredoc(t_ast *ast, t_shell *shell)
 {
 	char	*line;
 	char	*end;
@@ -104,12 +104,20 @@ void				create_redirection_ast_content_heredoc(t_ast *ast, t_shell *shell)
 		free(temp);
 		free(line);
 	}
+	if (!line)
+	{
+		free_lineeditor(&shell->lineeditor);
+		free(str);
+		ft_putstr("\n");
+		return (-1);
+	}
 	ft_printf("\n");
 	free(line);
 	temp = str;
 	str = ft_chrjoin(str, '\n');
 	free(temp);
 	((t_binary_token *)(ast->right->content))->right = str;
+	return (0);
 }
 
 t_ast				*create_redirection_ast_content(t_lexer *lexer, int pos, t_shell *shell)
@@ -124,7 +132,14 @@ t_ast				*create_redirection_ast_content(t_lexer *lexer, int pos, t_shell *shell
 	ast->right->content = (t_binary_token *)ft_memalloc(sizeof(t_binary_token));
 	((t_binary_token *)ast->right->content)->right = ((t_token *)lexer->tokens.elem[pos + 1])->str;
 	if (ft_strequ(ast->content, "<<"))
-		create_redirection_ast_content_heredoc(ast, shell);
+		if (create_redirection_ast_content_heredoc(ast, shell))
+		{
+			free(ast->right->content);
+			free(ast->right);
+			free(ast->content);
+			free(ast);
+			return (0);
+		}
 	((t_token *)lexer->tokens.elem[pos + 1])->type = USED;
 	return (ast);
 }
@@ -143,7 +158,8 @@ t_ast				*create_redirection_ast(t_lexer *lexer, int beg, int end, t_shell *shel
 		free_ast(ast);
 		return (0);
 	}
-	ast = create_redirection_ast_content(lexer, pos, shell);
+	if (!(ast = create_redirection_ast_content(lexer, pos, shell)))
+		return (0);
 	if (pos >= 1 && ((t_token *)lexer->tokens.elem[pos - 1])->type == IO_NUMBER)
 	{
 		((t_binary_token *)ast->right->content)->left = ((t_token *)lexer->tokens.elem[pos - 1])->str;

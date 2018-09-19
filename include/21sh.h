@@ -6,7 +6,7 @@
 /*   By: obamzuro <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/07/04 11:35:30 by obamzuro          #+#    #+#             */
-/*   Updated: 2018/09/18 10:44:57 by obamzuro         ###   ########.fr       */
+/*   Updated: 2018/09/19 14:58:25 by obamzuro         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -91,6 +91,7 @@ typedef struct			s_lineeditor
 	char			*cpbuf;
 	struct winsize	ws;
 	char			prompt;
+	char			trash[8];
 }						t_lineeditor;
 
 typedef struct			s_initfd
@@ -143,7 +144,7 @@ typedef struct			s_esc_corr
 	void	(*func)(t_lineeditor *, t_history *);
 }						t_esc_corr;
 
-volatile sig_atomic_t	g_sigint;
+volatile sig_atomic_t	g_sigwinch;
 
 typedef struct			s_shell
 {
@@ -177,6 +178,7 @@ char					*get_env(char *key, char **env);
 void					int_handler(int sig);
 
 void					free_double_arr(char **args);
+void					free_lineeditor(t_lineeditor *lineeditor);
 
 void					term_associate(void);
 void					change_termios(t_initfd *initfd, int canon);

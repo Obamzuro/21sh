@@ -102,7 +102,6 @@ t_token				*lexing_handling_quotes(t_shell *shell, t_token *token, char **last,
 			{
 				free(token->str);
 				free(token);
-				free_lineeditor(&shell->lineeditor);
 				return (NULL);
 			}
 			history_append("\n", &shell->history, 1);
