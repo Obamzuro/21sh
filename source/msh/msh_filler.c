@@ -6,7 +6,7 @@
 /*   By: obamzuro <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/05/19 13:52:42 by obamzuro          #+#    #+#             */
-/*   Updated: 2018/09/17 15:44:51 by obamzuro         ###   ########.fr       */
+/*   Updated: 2018/09/23 18:30:11 by obamzuro         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -25,25 +25,25 @@ t_comm_corr g_commands[] =
 
 t_esc_corr g_esc[] =
 {
-	{LEFT, line_editing_left},
-	{RIGHT, line_editing_right},
-	{UP, line_editing_up},
-	{DOWN, line_editing_down},
-	{ALTLEFT, line_editing_begword},
-	{ALTRIGHT, line_editing_endword},
-	{ALTUP, line_editing_altup},
-	{ALTDOWN, line_editing_altdown},
-	{BACKSPACE, line_editing_backspace},
-	{HOME, line_editing_home},
-	{END, line_editing_end},
-	{SHIFTLEFT, line_editing_shiftleft},
-	{SHIFTRIGHT, line_editing_shiftright},
-	{ALTC, line_editing_altc},
-	{ALTV, line_editing_altv},
-	{ALTX, line_editing_altx},
-	{ALTQ, line_editing_help},
-	{DEL, line_editing_del},
-	{EOT, line_editing_eot}
+	{LEFT, line_editing_left, 0, 0},
+	{RIGHT, line_editing_right, 0, 0},
+	{UP, line_editing_up, 1, 0},
+	{DOWN, line_editing_down, 1, 0},
+	{ALTLEFT, line_editing_begword, 0, 0},
+	{ALTRIGHT, line_editing_endword, 0, 0},
+	{ALTUP, line_editing_altup, 0, 0},
+	{ALTDOWN, line_editing_altdown, 0, 0},
+	{BACKSPACE, line_editing_backspace, 1, 0},
+	{HOME, line_editing_home, 0, 0},
+	{END, line_editing_end, 0, 0},
+	{SHIFTLEFT, line_editing_shiftleft, 1, 1},
+	{SHIFTRIGHT, line_editing_shiftright, 1, 1},
+	{ALTC, line_editing_altc, 0, 1},
+	{ALTV, line_editing_altv, 1, 0},
+	{ALTX, line_editing_altx, 1, 1},
+	{ALTQ, line_editing_help, 0, 0},
+	{DEL, line_editing_del, 1, 0},
+	{EOT, line_editing_eot, 1, 0}
 };
 
 char		g_ascii_ignore_chars[AM_ASCII_IGNORE + 1] =

@@ -6,7 +6,7 @@
 /*   By: obamzuro <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/05/19 13:52:33 by obamzuro          #+#    #+#             */
-/*   Updated: 2018/09/17 14:50:06 by obamzuro         ###   ########.fr       */
+/*   Updated: 2018/09/21 21:46:06 by obamzuro         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -73,7 +73,10 @@ static int		ft_exec_check_err(char **args, char *comm)
 	}
 	if (!S_ISREG(tempstat.st_mode) || access(comm, X_OK) == -1)
 	{
-		ft_fprintf(2, "21sh: Permission denied: %s\n", comm);
+		if (S_ISDIR(tempstat.st_mode))
+			ft_fprintf(2, "21sh: %s: is a directory\n", comm);
+		else
+			ft_fprintf(2, "21sh: Permission denied: %s\n", comm);
 		if (comm != args[0])
 			free(comm);
 		return (-1);
@@ -94,10 +97,6 @@ static int		ft_exec_fork(char **args, char ***env, char *comm)
 			return (-1);
 		}
 	}
-//	else if (process > 0)
-//	{
-//		wait(0);
-//	}
 	else if (process < 0)
 	{
 		ft_fprintf(2, "21sh: Error creating a child thread\n");
@@ -111,12 +110,11 @@ int				ft_exec(char **args, char ***env, int forkneed)
 	char		*comm;
 	int			ret;
 
-	if (!ft_strchr(args[0], '/'))
+	if (!ft_strchr(args[0], '/') && 
+			!(ft_is_str_in_args(args[0], 2, "..", ".")))
 		comm = ft_exec_path(args, env);
 	else
-	{
 		comm = args[0];
-	}
 	if (ft_exec_check_err(args, comm) == -1)
 		return (-1);
 	if (forkneed)

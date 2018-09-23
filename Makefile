@@ -6,7 +6,7 @@
 #    By: obamzuro <marvin@42.fr>                    +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2018/05/11 15:56:03 by obamzuro          #+#    #+#              #
-#    Updated: 2018/09/17 14:40:12 by obamzuro         ###   ########.fr        #
+#    Updated: 2018/09/21 17:50:44 by obamzuro         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -28,7 +28,8 @@ SRCNAME = main.c		\
 		  msh/msh_replace_env_variable.c\
 		  ast_creator/creator.c\
 		  lexer/lexer.c\
-		  parser/parser.c
+		  parser/parser.c\
+		  error.c
 
 FLAGS = -g -Wall -Wextra -Werror
 

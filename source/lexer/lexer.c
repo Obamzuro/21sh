@@ -1,4 +1,17 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   lexer.c                                            :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: obamzuro <marvin@42.fr>                    +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2018/09/21 16:28:21 by obamzuro          #+#    #+#             */
+/*   Updated: 2018/09/23 19:15:35 by obamzuro         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 #include "21sh.h"
+
 int					lexing_try_append_operator(char buf, char **tokenstr)
 {
 	int			i;
@@ -29,9 +42,11 @@ t_token				*lexing_divide_operator(t_lexer *lexer, t_token *token)
 	if (lexer->tokens.len > 0 &&
 		((t_token *)lexer->tokens.elem[lexer->tokens.len - 1])->type == UKNOWN)
 	{
-		if (ft_isnumber(((t_token *)lexer->tokens.elem[lexer->tokens.len - 1])->str) &&
+		if (ft_isnumber(((t_token *)lexer->tokens.elem[lexer->tokens.len
+						- 1])->str) &&
 				ft_is_str_in_args(token->str, 5, ">", ">&", ">>", "<", "<&"))
-			((t_token *)lexer->tokens.elem[lexer->tokens.len - 1])->type = IO_NUMBER;
+			((t_token *)lexer->tokens.elem[lexer->tokens.len
+				- 1])->type = IO_NUMBER;
 		else
 			((t_token *)lexer->tokens.elem[lexer->tokens.len - 1])->type = WORD;
 	}
@@ -54,7 +69,8 @@ int					lexing_is_operator_begin(char buf)
 	return (0);
 }
 
-t_token				*lexing_init_operator_token(char buf, t_token *token, t_lexer *lexer)
+t_token				*lexing_init_operator_token(char buf,
+		t_token *token, t_lexer *lexer)
 {
 	if (token && token->str)
 		push_ftvector(&lexer->tokens, token);
@@ -75,8 +91,37 @@ int					lexing_handling_appword(t_token *token, char buf)
 	return (0);
 }
 
-t_token				*lexing_handling_quotes(t_shell *shell, t_token *token, char **last,
-		char **command)
+int					lexing_handling_quotes_ifnull(t_shell *shell,
+		t_token *token, char **last, char **command)
+{
+	char	*temp;
+
+	temp = ft_chrjoin(token->str, '\n');
+	free(token->str);
+	token->str = temp;
+	free(*command);
+	line_editing_end(&shell->lineeditor, &shell->history);
+	ft_putstr("\nq> ");
+	shell->reading_mode = QUOTE;
+	if ((!(*command = input_command(&shell->lineeditor,
+					&shell->history, 'q', shell)) && ft_printf("\n"))
+		|| shell->reading_mode == READEND)
+	{
+		if (shell->reading_mode == READEND)
+			ft_printf("\n21sh: syntax error: unexpected eof\n");
+		free(token->str);
+		free(token);
+		free_lineeditor(&shell->lineeditor);
+		return (-1);
+	}
+	history_append("\n", &shell->history, 1);
+	history_append(*command, &shell->history, 1);
+	*last = *command - 1;
+	return (0);
+}
+
+t_token				*lexing_handling_quotes(t_shell *shell,
+		t_token *token, char **last, char **command)
 {
 	char	delim;
 	char	*temp;
@@ -92,23 +137,11 @@ t_token				*lexing_handling_quotes(t_shell *shell, t_token *token, char **last,
 			break ;
 		if (!**last)
 		{
-			temp = ft_chrjoin(token->str, '\n');
-			free(token->str);
-			token->str = temp;
-			free(*command);
-			line_editing_end(&shell->lineeditor, &shell->history);
-			ft_putstr("\nq> ");
-			if (!(*command = input_command(&shell->lineeditor, &shell->history, 'q')) && ft_printf("\n"))
-			{
-				free(token->str);
-				free(token);
-				free_lineeditor(&shell->lineeditor);
+			if (lexing_handling_quotes_ifnull(shell,
+							token, last, command))
 				return (NULL);
-			}
-			history_append("\n", &shell->history, 1);
-			history_append(*command, &shell->history, 1);
-			*last = *command - 1;
-			continue ;
+			else
+				continue;
 		}
 		temp = ft_chrjoin(token->str, **last);
 		free(token->str);
@@ -156,10 +189,22 @@ void				lexing_print(t_lexer *lexer)
 	ft_printf("\n");
 	while (i < lexer->tokens.len)
 	{
-		ft_printf("%s | %d\n", ((t_token *)lexer->tokens.elem[i])->str, ((t_token *)lexer->tokens.elem[i])->type);
+		ft_printf("%s | %d\n", ((t_token *)lexer->tokens.elem[i])->str,
+				((t_token *)lexer->tokens.elem[i])->type);
 		++i;
 	}
 	ft_printf("\n");
+}
+
+void				lexer_creating_cycle_cont(t_shell *shell, t_token **token,
+		char *last)
+{
+	if (ft_strchr(" \t", *last))
+		*token = lexing_handling_separator(shell->lexer, *token);
+	else if (*token && (*token)->type == UKNOWN)
+		lexing_handling_appword(*token, *last);
+	else
+		*token = lexing_handling_initword(*token, *last);
 }
 
 int					lexer_creating_cycle(char **command, t_shell *shell,
@@ -186,12 +231,8 @@ int					lexer_creating_cycle(char **command, t_shell *shell,
 		}
 		else if (!*last && lexing_handling_end(shell->lexer, token))
 			break ;
-		else if (ft_strchr(" \t", *last))
-			token = lexing_handling_separator(shell->lexer, token);
-		else if (token && token->type == UKNOWN)
-			lexing_handling_appword(token, *last);
 		else
-			token = lexing_handling_initword(token, *last);
+			lexer_creating_cycle_cont(shell, &token, last);
 	}
 	return (0);
 }

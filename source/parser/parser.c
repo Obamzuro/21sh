@@ -1,5 +1,16 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   parser.c                                           :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: obamzuro <marvin@42.fr>                    +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2018/09/21 17:17:25 by obamzuro          #+#    #+#             */
+/*   Updated: 2018/09/23 19:16:46 by obamzuro         ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 #include "21sh.h"
-int						parse_ast(t_ast *ast, t_shell *shell, int needfork);
 
 void				print_ast(t_ast *ast)
 {
@@ -10,13 +21,22 @@ void				print_ast(t_ast *ast)
 	{
 		if (!ast)
 			break ;
-		ft_printf("AST #%d - %s %d\n", i, ast->content, ast->type);
+		if (ast->type == COMMAND)
+			ft_printf("AST #%d - %s %d\n", i, ((char **)ast->content)[0], ast->type);
+		else
+			ft_printf("AST #%d - %s %d\n", i, ast->content, ast->type);
 		if (ast->right)
 		{
 			if (ast->type == REDIRECTION)
-				ft_printf("AST #%d - |%s  %s| %d\n", i, ((t_binary_token *)ast->right->content)->left, ((t_binary_token *)ast->right->content)->right, ast->right->type);
+				ft_printf("AST #%d - |%s  %s| %d\n", i,
+					((t_binary_token *)ast->right->content)->left,
+					((t_binary_token *)ast->right->content)->right,
+					ast->right->type);
+			else if (ast->type == COMMAND)
+				ft_printf("AST #%d - %s %d\n", i, ((char **)ast->content)[0], ast->type);
 			else
-				ft_printf("AST #%d - %s %d\n", i, ast->right->content, ast->right->type);
+				ft_printf("AST #%d - %s %d\n", i, ast->right->content,
+						ast->right->type);
 		}
 		else
 			ft_printf("AST #%d right - NULL\n", i);
@@ -25,7 +45,7 @@ void				print_ast(t_ast *ast)
 	}
 }
 
-int						parse_ast_pipe_child(t_ast *ast, t_shell *shell,
+int					parse_ast_pipe_child(t_ast *ast, t_shell *shell,
 		int fdpipe[2], int is_out)
 {
 	pid_t	pid;
@@ -53,16 +73,13 @@ int						parse_ast_pipe_child(t_ast *ast, t_shell *shell,
 	return (pid);
 }
 
-int						parse_ast_pipe(t_ast *ast, t_shell *shell)
+int					parse_ast_pipe(t_ast *ast, t_shell *shell)
 {
 	int			fdpipe[2];
 	pid_t		pid[2];
 
 	if (pipe(fdpipe) == -1)
-	{
-		ft_fprintf(2, "21sh: pipe creating error");
-		return (0);
-	}
+		return ((int)print_error_zero("21sh: pipe creating error"));
 	if ((pid[0] = parse_ast_pipe_child(ast, shell, fdpipe, 1)) == -1)
 	{
 		close(fdpipe[0]);
@@ -85,9 +102,12 @@ int						parse_ast_pipe(t_ast *ast, t_shell *shell)
 	return (1);
 }
 
-int						parse_ast_command(t_ast *ast, t_shell *shell,
+int					parse_ast_command(t_ast *ast, t_shell *shell,
 		int needfork)
 {
+	tilde_expansion(shell, ast->content);
+	env_expansion(shell, ast->content);
+	quote_removing(shell,ast->content);
 	if (!handle_commands(ast->content, &shell->env))
 	{
 		if (needfork)
@@ -103,7 +123,7 @@ int						parse_ast_command(t_ast *ast, t_shell *shell,
 	return (1);
 }
 
-int						parse_ast_redirection_right(t_ast *ast)
+int					parse_ast_redirection_right(t_ast *ast)
 {
 	int				rightfd;
 	t_binary_token	*binary_token;
@@ -113,10 +133,12 @@ int						parse_ast_redirection_right(t_ast *ast)
 	if (ft_strequ((char *)ast->content, ">"))
 		rightfd = open(binary_token->right, O_WRONLY | O_CREAT | O_TRUNC, 0644);
 	else if (ft_strequ((char *)ast->content, ">>"))
-		rightfd = open(binary_token->right, O_WRONLY | O_CREAT | O_APPEND, 0644);
+		rightfd = open(binary_token->right, O_WRONLY |
+				O_CREAT | O_APPEND, 0644);
 	else if (ft_strequ((char *)ast->content, "<"))
 		rightfd = open(binary_token->right, O_RDONLY, 0644);
-	else if (ft_strequ((char *)ast->content, ">&") || ft_strequ((char *)ast->content, "<&"))
+	else if (ft_strequ((char *)ast->content, ">&")
+			|| ft_strequ((char *)ast->content, "<&"))
 		rightfd = ft_atoi(binary_token->right);
 	if (rightfd == -1)
 	{
@@ -126,7 +148,7 @@ int						parse_ast_redirection_right(t_ast *ast)
 	return (rightfd);
 }
 
-int						parse_ast_redirection_kernel_heredoc(t_ast *ast, int fd)
+int					parse_ast_redirection_kernel_heredoc(t_ast *ast, int fd)
 {
 	int		pipefd[2];
 
@@ -143,25 +165,26 @@ int						parse_ast_redirection_kernel_heredoc(t_ast *ast, int fd)
 	return (1);
 }
 
-int						parse_ast_redirection_kernel(t_ast *ast, t_shell *shell,
+int					parse_ast_redirection_kernel(t_ast *ast, t_shell *shell,
 		int fd, int rightfd)
 {
 	int		oldfd;
+	int		devnull;
 
 	oldfd = dup(fd);
 	if (ft_strequ(((t_binary_token *)(ast->right->content))->right, "-"))
-		close(fd);
+	{
+		devnull = open("/dev/null", O_RDWR);
+		dup2(devnull, fd);
+		close(devnull);
+	}
 	else if (ft_strequ(ast->content, "<<"))
 	{
 		if (!parse_ast_redirection_kernel_heredoc(ast, fd))
 			return (0);
 	}
 	else
-	{
 		dup2(rightfd, fd);
-	//TODO: is need close?
-//		close(rightfd);
-	}
 	if (!parse_ast(ast->left, shell, 0))
 		return (0);
 	dup2(oldfd, fd);
@@ -169,7 +192,7 @@ int						parse_ast_redirection_kernel(t_ast *ast, t_shell *shell,
 	return (1);
 }
 
-int						parse_ast_redirection_child(t_ast *ast, t_shell *shell)
+int					parse_ast_redirection_child(t_ast *ast, t_shell *shell)
 {
 	int			fd;
 	int			rightfd;
@@ -187,7 +210,7 @@ int						parse_ast_redirection_child(t_ast *ast, t_shell *shell)
 	return (1);
 }
 
-int						parse_ast_redirection(t_ast *ast, t_shell *shell,
+int					parse_ast_redirection(t_ast *ast, t_shell *shell,
 		int needfork)
 {
 	pid_t		pid;
@@ -215,27 +238,27 @@ int						parse_ast_redirection(t_ast *ast, t_shell *shell,
 	return (1);
 }
 
-int						parse_ast(t_ast *ast, t_shell *shell, int needfork)
+int					parse_ast(t_ast *ast, t_shell *shell, int needfork)
 {
 	if (!ast)
-		return (0);
+		return (-1);
 	if (ast->type == OPERATOR && ft_strequ(ast->content, ";"))
 	{
-		if (!parse_ast(ast->left, shell, 1))
-			return (0);
-		if (!parse_ast(ast->right, shell, 1))
-			return (0);
+		if (parse_ast(ast->left, shell, 1))
+			return (-1);
+		if (parse_ast(ast->right, shell, 1))
+			return (-1);
 	}
 	else if (ast->type == OPERATOR && ft_strequ(ast->content, "|"))
 	{
 		if (!parse_ast_pipe(ast, shell))
-			return (0);
+			return (-1);
 	}
 	else if (ast->type == REDIRECTION &&
 			!parse_ast_redirection(ast, shell, needfork))
-		return (0);
+		return (-1);
 	else if (ast->type == COMMAND &&
 			!parse_ast_command(ast, shell, needfork))
-		return (0);
-	return (1);
+		return (-1);
+	return (0);
 }

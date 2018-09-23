@@ -6,7 +6,7 @@
 /*   By: obamzuro <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/05/19 13:52:21 by obamzuro          #+#    #+#             */
-/*   Updated: 2018/05/23 15:51:52 by obamzuro         ###   ########.fr       */
+/*   Updated: 2018/09/23 18:26:01 by obamzuro         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -35,27 +35,27 @@ static int			check_dir_err(char *pathname)
 		return (0);
 }
 
-static void			change_dir_home_sign(char **args, char ***env)
-{
-	char *line;
-
-	if (args[1])
-	{
-		if (args[1][0] == '~')
-		{
-			line = ft_strjoin(get_env("HOME", *env), args[1] + 1);
-			free(args[1]);
-			args[1] = line;
-		}
-		if (args[2] && args[2][0] == '~')
-		{
-			line = ft_strjoin(get_env("HOME", *env), args[2] + 1);
-			free(args[2]);
-			args[2] = line;
-		}
-	}
-}
-
+//static void			change_dir_home_sign(char **args, char ***env)
+//{
+//	char *line;
+//
+//	if (args[1])
+//	{
+//		if (args[1][0] == '~')
+//		{
+//			line = ft_strjoin(get_env("HOME", *env), args[1] + 1);
+//			free(args[1]);
+//			args[1] = line;
+//		}
+//		if (args[2] && args[2][0] == '~')
+//		{
+//			line = ft_strjoin(get_env("HOME", *env), args[2] + 1);
+//			free(args[2]);
+//			args[2] = line;
+//		}
+//	}
+//}
+//
 static void			change_dir_one_arg(char **args, char ***env)
 {
 	char	*value;
@@ -104,7 +104,7 @@ void				change_dir(char **args, char ***env)
 	char			*home;
 
 	oldpwd = getcwd(0, 0);
-	change_dir_home_sign(args, env);
+//	change_dir_home_sign(args, env);
 	home = get_env("HOME", *env);
 	if (args[0] && args[1] && args[2] && args[3])
 		ft_fprintf(2, "cd: too many arguments\n");

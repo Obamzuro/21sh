@@ -6,7 +6,7 @@
 /*   By: obamzuro <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/07/04 11:35:30 by obamzuro          #+#    #+#             */
-/*   Updated: 2018/09/19 14:58:25 by obamzuro         ###   ########.fr       */
+/*   Updated: 2018/09/23 16:04:00 by obamzuro         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -33,6 +33,7 @@
 # define AM_HISTORY 5
 # define AM_ESC 19
 # define AM_ASCII_IGNORE 2
+# define READING_SIZE 8
 
 # define ESC "\x1B"
 # define DOWN "\x1B[B"
@@ -57,7 +58,6 @@
 # define ALTC "\xc3\xa7"
 # define ALTV "\xe2\x88\x9a"
 # define ALTQ "\xc5\x93"
-//# define DEL "\x7F"
 # define EOT "\x4"
 
 typedef enum			e_tokentype
@@ -72,6 +72,14 @@ typedef enum			e_tokentype
 	USED
 }						t_tokentype;
 
+typedef enum			e_reading_mode
+{
+	BASIC = 0,
+	QUOTE,
+	HEREDOC,
+	READEND
+}						t_reading_mode;
+
 typedef struct			s_history
 {
 	char	*commands[AM_HISTORY];
@@ -79,19 +87,22 @@ typedef struct			s_history
 	int		current;
 }						t_history;
 
+struct					s_shell;
+
 typedef struct			s_lineeditor
 {
-	char			letter[8];
+	char			letter[READING_SIZE];
 	int				curpos[2];
 	int				seek;
-	char	*buffer;
+	char			*buffer;
 	int				is_history_searched;
 	int				selected[2];
 	int				selectedmode;
 	char			*cpbuf;
 	struct winsize	ws;
 	char			prompt;
-	char			trash[8];
+	char			trash[READING_SIZE + 1];
+	struct s_shell	*shell;
 }						t_lineeditor;
 
 typedef struct			s_initfd
@@ -142,6 +153,8 @@ typedef struct			s_esc_corr
 {
 	char	*str;
 	void	(*func)(t_lineeditor *, t_history *);
+	int		is_printing : 1;
+	int		is_selecting : 1;
 }						t_esc_corr;
 
 volatile sig_atomic_t	g_sigwinch;
@@ -153,6 +166,7 @@ typedef struct			s_shell
 	t_history		history;
 	t_lexer			*lexer;
 	t_lineeditor	lineeditor;
+	t_reading_mode	reading_mode;
 	t_ast			*ast;
 }						t_shell;
 
@@ -162,7 +176,6 @@ char					*msh_strjoin_path(const char *s1, const char *s2);
 
 char					**fill_env(void);
 void					fill_commands(t_comm_corr *commands);
-int						env_expansion(t_shell *shell);
 
 void					change_dir(char **args, char ***env);
 void					ft_echo(char **args, char ***env);
@@ -187,12 +200,13 @@ char					**init_operators(void);
 void				free_lexer(t_lexer *lexer);
 int					lexer_creating(char *command, t_shell *shell);
 void				history_append(char *command, t_history *history, int appendmode);
-int						parse_ast(t_ast *ast, t_shell *shell, int needfork);
-t_ast				*create_separator_ast(t_lexer *lexer, int beg, int end, int level, t_shell *shell);
-char				*input_command(t_lineeditor *lineeditor, t_history *history, char prompt);
+int					parse_ast(t_ast *ast, t_shell *shell, int needfork);
+t_ast				*create_separator_ast(int beg, int end, int level, t_shell *shell);
+char				*input_command(t_lineeditor *lineeditor, t_history *history,
+		char prompt, t_shell *shell);
 int					free_ast(t_ast *ast);
 void				print_ast(t_ast *ast);
-int			handle_commands(char **args, char ***env);
+int					handle_commands(char **args, char ***env);
 
 void				line_editing_left(t_lineeditor *lineeditor, t_history *history);
 void				line_editing_right(t_lineeditor *lineeditor, t_history *history);
@@ -216,4 +230,10 @@ void				line_editing_eot(t_lineeditor *lineeditor, t_history *history);
 
 void				left_shift_cursor(int amount, t_lineeditor *lineeditor, t_history *history);
 void				write_line(t_lineeditor *lineeditor);
+
+void				*print_error_zero(char *str);
+
+int					tilde_expansion(t_shell *shell, char **args);
+int					env_expansion  (t_shell *shell, char **args);
+int					quote_removing (t_shell *shell, char **args);
 #endif
