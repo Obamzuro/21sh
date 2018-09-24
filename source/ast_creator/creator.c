@@ -6,7 +6,7 @@
 /*   By: obamzuro <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/09/21 16:35:41 by obamzuro          #+#    #+#             */
-/*   Updated: 2018/09/23 19:00:11 by obamzuro         ###   ########.fr       */
+/*   Updated: 2018/09/23 19:37:23 by obamzuro         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -133,7 +133,8 @@ int					create_redirection_ast_content_heredoc(t_ast *ast,
 	str = 0;
 	ft_printf("h> ");
 	shell->reading_mode = HEREDOC;
-	while ((line = input_command(&shell->lineeditor, &shell->history, 'h', shell)))
+	while ((line = input_command(&shell->lineeditor,
+					&shell->history, 'h', shell)))
 	{
 		if (ft_strequ(line, end) || shell->reading_mode == READEND)
 			break ;
@@ -185,9 +186,10 @@ t_ast				*create_redirection_ast(t_lexer *lexer, int beg,
 	ast = 0;
 	if ((pos = first_token_pos(lexer, beg, end, g_io_file_op)) == -1)
 		return (create_command(lexer, beg, end));
-	if (lexer->tokens.len <= pos + 1 || pos + 1 > end)
+	if (lexer->tokens.len <= pos + 1 || pos + 1 > end
+			|| ((t_token *)lexer->tokens.elem[pos + 1])->type == OPERATOR)
 	{
-		ft_fprintf(2, "21sh: parse error - redirection word missed\n");
+		ft_fprintf(2, "21sh: parse error - redirection word\n");
 		free_ast(ast);
 		return (0);
 	}
@@ -225,7 +227,8 @@ t_ast				*create_separator_ast(int beg, int end,
 	ast = 0;
 	if ((pos = last_token_pos(lexer, beg, end, g_separator_op[level])) == -1)
 		return (create_separator_ast_notfound(beg, end, level, shell));
-	if (pos + 1 > end || !pos)
+	if (pos + 1 > end || !pos
+			|| ((t_token *)lexer->tokens.elem[pos + 1])->type == OPERATOR)
 		return (print_error_zero("21sh: parse operator error\n"));
 	ast = (t_ast *)ft_memalloc(sizeof(t_ast));
 	ast->content = ft_strdup(((t_token *)lexer->tokens.elem[pos])->str);
@@ -234,8 +237,7 @@ t_ast				*create_separator_ast(int beg, int end,
 					pos - 1, level, shell)) && free_ast(ast))
 		return (0);
 	if (!level && !(ast->right = create_separator_ast(pos + 1,
-					end, level + 1, shell)) &&
-			free_ast(ast))
+					end, level + 1, shell)) && free_ast(ast))
 		return (0);
 	else if (level == 1 && !(ast->right = create_redirection_ast(lexer,
 					pos + 1, end, shell)) &&

@@ -6,7 +6,7 @@
 /*   By: obamzuro <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/05/13 15:05:22 by obamzuro          #+#    #+#             */
-/*   Updated: 2018/09/23 19:28:56 by obamzuro         ###   ########.fr       */
+/*   Updated: 2018/09/24 12:31:22 by obamzuro         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -919,11 +919,10 @@ void				quote_removing_str(char **str)
 	nextsearch = 0;
 	while (*str && **str)
 	{
-		if (!(quote = ft_strchr_str(*str, "\'\"")) ||
+		if (!(quote = ft_strchr_str(*str + nextsearch, "\'\"")) ||
 			!(quote2 = ft_strchr(quote + 1, *quote)))
 			return ;
-		nextsearch += quote - *str;
-		nextsearch += quote2 - quote - 1;
+		nextsearch = quote2 - *str - 1;
 		*quote = 0;
 		*quote2 = 0;
 		temp = *str;
