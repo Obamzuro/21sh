@@ -6,11 +6,11 @@
 /*   By: obamzuro <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/05/19 13:52:42 by obamzuro          #+#    #+#             */
-/*   Updated: 2018/09/23 18:30:11 by obamzuro         ###   ########.fr       */
+/*   Updated: 2018/09/25 13:31:31 by obamzuro         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "21sh.h"
+#include "twenty_one_sh.h"
 
 t_comm_corr g_commands[] =
 {
@@ -33,7 +33,7 @@ t_esc_corr g_esc[] =
 	{ALTRIGHT, line_editing_endword, 0, 0},
 	{ALTUP, line_editing_altup, 0, 0},
 	{ALTDOWN, line_editing_altdown, 0, 0},
-	{BACKSPACE, line_editing_backspace, 1, 0},
+	{BACKSPACE, line_editing_backspace, 1, 1},
 	{HOME, line_editing_home, 0, 0},
 	{END, line_editing_end, 0, 0},
 	{SHIFTLEFT, line_editing_shiftleft, 1, 1},
@@ -51,7 +51,7 @@ char		g_ascii_ignore_chars[AM_ASCII_IGNORE + 1] =
 	EOT[0], '\n', 0
 };
 
-char *(operators[]) =
+char *(g_operators[]) =
 {
 	">", ">&", ">>", "<", "<&", "<<", "|", ";"
 };

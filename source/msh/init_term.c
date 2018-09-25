@@ -10,7 +10,7 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include <21sh.h>
+#include <twenty_one_sh.h>
 
 void	term_associate(void)
 {

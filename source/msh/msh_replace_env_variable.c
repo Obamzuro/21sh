@@ -10,7 +10,7 @@
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "21sh.h"
+#include "twenty_one_sh.h"
 
 static int			replace_env_variable_repl_end(char **args,
 		char **env, int i, int *j)

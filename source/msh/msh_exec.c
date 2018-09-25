@@ -6,11 +6,11 @@
 /*   By: obamzuro <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/05/19 13:52:33 by obamzuro          #+#    #+#             */
-/*   Updated: 2018/09/21 21:46:06 by obamzuro         ###   ########.fr       */
+/*   Updated: 2018/09/24 13:12:08 by obamzuro         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "21sh.h"
+#include "twenty_one_sh.h"
 
 static char		*ft_exec_path_find_comm(char **args, char **paths)
 {
@@ -110,7 +110,7 @@ int				ft_exec(char **args, char ***env, int forkneed)
 	char		*comm;
 	int			ret;
 
-	if (!ft_strchr(args[0], '/') && 
+	if (!ft_strchr(args[0], '/') &&
 			!(ft_is_str_in_args(args[0], 2, "..", ".")))
 		comm = ft_exec_path(args, env);
 	else
