@@ -6,7 +6,7 @@
 /*   By: obamzuro <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/09/24 14:47:11 by obamzuro          #+#    #+#             */
-/*   Updated: 2018/09/24 14:47:15 by obamzuro         ###   ########.fr       */
+/*   Updated: 2018/09/25 20:19:45 by obamzuro         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -39,5 +39,4 @@ void				history_append(char *command,
 			ft_strjoin(history->commands[history->last - 1], command);
 		free(temp);
 	}
-	history->current = history->last;
 }

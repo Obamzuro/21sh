@@ -6,7 +6,7 @@
 /*   By: obamzuro <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/09/24 14:10:25 by obamzuro          #+#    #+#             */
-/*   Updated: 2018/09/25 14:22:28 by obamzuro         ###   ########.fr       */
+/*   Updated: 2018/09/25 20:19:29 by obamzuro         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -66,6 +66,11 @@ void				line_editing_right(t_lineeditor *lineeditor,
 void				line_editing_up(t_lineeditor *lineeditor,
 		t_history *history)
 {
+	if (!lineeditor->is_history_searched && history->last)
+	{
+		history_append(lineeditor->buffer, history, 0);
+		history->current = history->last - 1;
+	}
 	if (history->current)
 	{
 		left_shift_cursor(lineeditor->seek, lineeditor, history);
@@ -74,12 +79,6 @@ void				line_editing_up(t_lineeditor *lineeditor,
 		ft_putstr(tgetstr("le", 0));
 		ft_putstr(tgetstr("cd", 0));
 		ft_printf("%c> ", lineeditor->prompt);
-		if (!lineeditor->is_history_searched &&
-				history->current == history->last)
-		{
-			history_append(lineeditor->buffer, history, 0);
-			--history->current;
-		}
 		--history->current;
 		free(lineeditor->buffer);
 		lineeditor->buffer =
