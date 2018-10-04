@@ -6,7 +6,7 @@
 /*   By: obamzuro <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/09/24 12:58:07 by obamzuro          #+#    #+#             */
-/*   Updated: 2018/10/04 15:10:50 by obamzuro         ###   ########.fr       */
+/*   Updated: 2018/10/04 15:13:35 by obamzuro         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,6 +18,7 @@ static int					lexing_handling_quotes_ifnull(t_shell *shell,
 	char	*temp;
 
 	temp = ft_chrjoin(token->str, '\n');
+	line_editing_end(&shell->lineeditor, &shell->history);
 	free(token->str);
 	token->str = temp;
 	free(*command);
