@@ -6,7 +6,7 @@
 /*   By: obamzuro <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/09/24 14:06:37 by obamzuro          #+#    #+#             */
-/*   Updated: 2018/09/25 14:29:56 by obamzuro         ###   ########.fr       */
+/*   Updated: 2018/10/04 17:08:08 by obamzuro         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -126,5 +126,6 @@ char						*input_command(t_lineeditor *lineeditor,
 		input_command_print_buffer(lineeditor, history);
 	}
 	free(lineeditor->cpbuf);
+	lineeditor->cpbuf = NULL;
 	return (lineeditor->buffer);
 }
