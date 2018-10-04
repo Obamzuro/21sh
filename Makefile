@@ -6,7 +6,7 @@
 #    By: obamzuro <marvin@42.fr>                    +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2018/05/11 15:56:03 by obamzuro          #+#    #+#              #
-#    Updated: 2018/09/25 15:12:47 by obamzuro         ###   ########.fr        #
+#    Updated: 2018/10/04 15:33:59 by obamzuro         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -66,15 +66,17 @@ HDRDIR = include	\
 
 HDR = include/twenty_one_sh.h
 
-all: $(NAME)
+all: lib $(NAME)
 
-$(NAME): $(OBJ)
-	make -C libft
-	make -C ftprintf
+$(NAME): $(OBJ) libft/libft.a ftprintf/libftprintf.a
 	gcc $(FLAGS) $(addprefix -I, $(HDRDIR)) $(OBJ) -L libft -lft -L ftprintf -lftprintf -ltermcap -o $(NAME)
 
 %.o: %.c $(HDR)
 	gcc $(FLAGS) $(addprefix -I, $(HDRDIR)) -c $< -o $@
+
+lib:
+	make -C libft
+	make -C ftprintf
 
 clean:
 	make -C libft clean
