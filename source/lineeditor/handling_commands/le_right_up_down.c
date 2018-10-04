@@ -6,7 +6,7 @@
 /*   By: obamzuro <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/09/24 14:10:25 by obamzuro          #+#    #+#             */
-/*   Updated: 2018/09/25 20:19:29 by obamzuro         ###   ########.fr       */
+/*   Updated: 2018/10/04 15:04:38 by obamzuro         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -36,7 +36,7 @@ static void			line_editing_right_incrseek(t_lineeditor *lineeditor,
 void				line_editing_right(t_lineeditor *lineeditor,
 		t_history *history)
 {
-	if (lineeditor->seek == (int)ft_strlen(lineeditor->buffer))
+	if (lineeditor->seek >= (int)ft_strlen(lineeditor->buffer))
 		return ;
 	if (lineeditor->curpos[1] >= lineeditor->ws.ws_col - 1 &&
 		(lineeditor->buffer[lineeditor->seek + 1] == '\n' ||

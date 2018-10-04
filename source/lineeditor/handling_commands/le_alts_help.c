@@ -6,7 +6,7 @@
 /*   By: obamzuro <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/09/24 14:10:17 by obamzuro          #+#    #+#             */
-/*   Updated: 2018/09/24 14:11:11 by obamzuro         ###   ########.fr       */
+/*   Updated: 2018/10/04 14:37:00 by obamzuro         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -78,4 +78,7 @@ void				line_editing_help(t_lineeditor *lineeditor,
 {
 	(void)lineeditor;
 	(void)history;
+	ft_printf("seek = %d\n", lineeditor->seek);
+	ft_printf("curpos[0] = %d\n", lineeditor->curpos[0]);
+	ft_printf("curpos[1] = %d\n", lineeditor->curpos[1]);
 }

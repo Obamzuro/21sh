@@ -6,7 +6,7 @@
 /*   By: obamzuro <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2018/09/24 12:58:07 by obamzuro          #+#    #+#             */
-/*   Updated: 2018/09/25 14:07:01 by obamzuro         ###   ########.fr       */
+/*   Updated: 2018/10/04 15:10:50 by obamzuro         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,7 +21,6 @@ static int					lexing_handling_quotes_ifnull(t_shell *shell,
 	free(token->str);
 	token->str = temp;
 	free(*command);
-	line_editing_end(&shell->lineeditor, &shell->history);
 	ft_putstr("\nq> ");
 	shell->reading_mode = QUOTE;
 	if ((!(*command = input_command(&shell->lineeditor,
